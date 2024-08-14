@@ -6,20 +6,15 @@ provider "aws" {
 # Variables
 variable "project_name" {
   default = "flip-aws-demo"
-  description = "A name to prefix resources and tags"
-}
-
-locals {
-  common_tags = {
-    Project = var.project_name
-    ManagedBy = "Terraform"
-  }
 }
 
 # IAM User for device provisioning
 resource "aws_iam_user" "device_provisioning_user" {
   name = "${var.project_name}-device-provisioning-user"
-  tags = local.common_tags
+}
+
+resource "aws_iam_access_key" "device_provisioning_key" {
+  user = aws_iam_user.device_provisioning_user.name
 }
 
 # IAM Policy for device provisioning
@@ -75,8 +70,6 @@ resource "aws_iot_policy" "device_policy" {
       }
     ]
   })
-
-  tags = local.common_tags
 }
 
 # Data sources for current region and account ID
@@ -84,10 +77,18 @@ data "aws_region" "current" {}
 data "aws_caller_identity" "current" {}
 
 # Output the names of created resources
-output "iot_policy_name" {
-  value = aws_iot_policy.device_policy.name
+output "aws_region" {
+  value = data.aws_region.current.name
 }
 
-output "provisioning_user_name" {
-  value = aws_iam_user.device_provisioning_user.name
+output "device_provisioning_access_key" {
+  value = {
+    access_key_id = aws_iam_access_key.device_provisioning_key.id
+    secret_key = aws_iam_access_key.device_provisioning_key.secret
+  }
+  sensitive = true
+}
+
+output "device_policy_name" {
+  value = aws_iot_policy.device_policy.name
 }

@@ -1,0 +1,15 @@
+{
+  "name": "device-provisioning-service",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "provision-device": "npx ts-node bin/cli.ts"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@aws-sdk/client-iot": "3.629.0",
+    "@types/node": "22.2.0"
+  }
+}

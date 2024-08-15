@@ -25,6 +25,7 @@ async function main() {
       thingName: batteryState.thingName,
       thingArn: batteryState.thingArn,
       certificateArn: batteryState.certificateArn,
+      iotEndpoint: batteryState.iotEndpoint,
     };
     fs.writeFileSync(
       path.join(deviceDir, "device-info.json"),
@@ -41,6 +42,18 @@ async function main() {
     fs.writeFileSync(
       path.join(deviceDir, "private-key.pem"),
       batteryState.privateKey
+    );
+
+    fs.copyFileSync(
+      path.join(
+        __dirname,
+        "..",
+        "..",
+        "terraform",
+        "output",
+        "AmazonRootCA1.pem"
+      ),
+      path.join(deviceDir, "AmazonRootCA1.pem")
     );
 
     console.log(`Device artifacts stored in: ${deviceDir}`);

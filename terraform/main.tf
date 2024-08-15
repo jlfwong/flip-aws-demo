@@ -72,6 +72,18 @@ resource "aws_iot_policy" "device_policy" {
   })
 }
 
+# Resource to fetch the Amazon Root CA
+resource "null_resource" "download_root_ca" {
+  provisioner "local-exec" {
+    command = "mkdir -p output && curl https://www.amazontrust.com/repository/AmazonRootCA1.pem -o output/AmazonRootCA1.pem"
+  }
+}
+
+# Data source to get the IoT endpoint
+data "aws_iot_endpoint" "endpoint" {
+  endpoint_type = "iot:Data-ATS"
+}
+
 # Data sources for current region and account ID
 data "aws_region" "current" {}
 data "aws_caller_identity" "current" {}
@@ -91,4 +103,8 @@ output "device_provisioning_access_key" {
 
 output "device_policy_name" {
   value = aws_iot_policy.device_policy.name
+}
+
+output "iot_endpoint" {
+  value = data.aws_iot_endpoint.endpoint.endpoint_address
 }

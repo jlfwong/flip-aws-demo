@@ -9,3 +9,23 @@ It includes...
 
 TODO:
 - Use s3 terraform backend: https://developer.hashicorp.com/terraform/language/settings/backends/s3
+
+# Setup
+
+- Download aws cli
+- Log in with your aws account using the aws cli
+
+## Apply terraform configuration and populate AWS configuration files
+
+    cd terraform
+    scripts/apply.sh</dev/tty
+
+## Provision a device
+
+    cd device-provisioning-service
+    npm install
+    npm run provision-device -- my-cool-battery device-artifacts/my-cool-battery
+
+## Boot the device
+
+TODO

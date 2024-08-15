@@ -6,19 +6,37 @@ import {
   AttachPolicyCommand,
 } from "@aws-sdk/client-iot";
 
-import * as awsConfig from "./aws-config.json";
+interface AWSConfig {
+  aws_region: {
+    value: string;
+  };
+  device_policy_name: {
+    value: string;
+  };
+  device_provisioning_access_key: {
+    value: {
+      access_key_id: string;
+      secret_key: string;
+    };
+  };
+  iot_endpoint: {
+    value: string;
+  };
+}
 
-const region = awsConfig["aws_region"]["value"];
-const iotPolicyName = awsConfig["device_policy_name"]["value"];
+import * as awsConfigRaw from "../terraform/output/aws-config.json";
+const awsConfig = awsConfigRaw as AWSConfig;
 
-const deviceProvisioningAccesskey =
-  awsConfig["device_provisioning_access_key"]["value"];
+const region = awsConfig.aws_region.value;
+const iotPolicyName = awsConfig.device_policy_name.value;
+const deviceProvisioningAccessKey =
+  awsConfig.device_provisioning_access_key.value;
 
 const iotClient = new IoTClient({
   region,
   credentials: {
-    accessKeyId: deviceProvisioningAccesskey["access_key_id"],
-    secretAccessKey: deviceProvisioningAccesskey["secret_key"],
+    accessKeyId: deviceProvisioningAccessKey.access_key_id,
+    secretAccessKey: deviceProvisioningAccessKey.secret_key,
   },
 });
 
@@ -59,8 +77,6 @@ async function attachIoTPolicy(certificateArn: string) {
 }
 
 export async function provisionBattery(thingName: string) {
-  const batteryId = +new Date();
-
   try {
     const thingArn = await createIoTThing(thingName);
     const cert = await createCertificate();
@@ -74,6 +90,7 @@ export async function provisionBattery(thingName: string) {
       thingArn,
       certificateArn: cert.certificateArn,
       certificatePem: cert.certificatePem,
+      iotEndpoint: awsConfig.iot_endpoint,
       privateKey: cert.privateKey,
     };
   } catch (error) {

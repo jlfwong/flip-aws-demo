@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "provision-device": "npx ts-node bin/cli.ts"
+    "provision-device": "npx ts-node scripts/provision-device.ts"
   },
   "author": "",
   "license": "ISC",

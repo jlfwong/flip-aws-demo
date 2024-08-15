@@ -1,10 +1,49 @@
 import { provisionBattery } from "../provision-device";
+import * as fs from "fs";
+import * as path from "path";
 
-// Example usage
 async function main() {
+  // Check if both device ID and directory path are provided as command-line arguments
+  const args = process.argv.slice(2);
+  if (args.length !== 2) {
+    console.error("Please provide two arguments: <device_id> <result_path>");
+    console.error("Example: ts-node cli.ts my-device-001 ./device-artifacts");
+    process.exit(1);
+  }
+
+  const [deviceId, resultPath] = args;
+
   try {
-    const batteryState = await provisionBattery();
-    console.log("Provisioned Battery State:", batteryState);
+    const batteryState = await provisionBattery(deviceId);
+
+    // Create the specified directory
+    const deviceDir = path.resolve(process.cwd(), resultPath);
+    fs.mkdirSync(deviceDir, { recursive: true });
+
+    // Write JSON file with thing name, thing ARN, and certificate ARN
+    const deviceInfo = {
+      thingName: batteryState.thingName,
+      thingArn: batteryState.thingArn,
+      certificateArn: batteryState.certificateArn,
+    };
+    fs.writeFileSync(
+      path.join(deviceDir, "device-info.json"),
+      JSON.stringify(deviceInfo, null, 2)
+    );
+
+    // Write certificate PEM file
+    fs.writeFileSync(
+      path.join(deviceDir, "certificate.pem"),
+      batteryState.certificatePem
+    );
+
+    // Write private key file
+    fs.writeFileSync(
+      path.join(deviceDir, "private-key.pem"),
+      batteryState.privateKey
+    );
+
+    console.log(`Device artifacts stored in: ${deviceDir}`);
   } catch (error) {
     console.error("Failed to provision battery:", error);
   }

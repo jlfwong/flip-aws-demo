@@ -58,9 +58,8 @@ async function attachIoTPolicy(certificateArn: string) {
   console.log("IoT policy attached");
 }
 
-export async function provisionBattery() {
+export async function provisionBattery(thingName: string) {
   const batteryId = +new Date();
-  const thingName = `battery-${batteryId}`;
 
   try {
     const thingArn = await createIoTThing(thingName);

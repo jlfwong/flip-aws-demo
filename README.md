@@ -33,3 +33,17 @@ TODO:
     npm run run-device -- ../device-provisioning-service/device-artifacts/battery-100
 
 Several devices can be running in parallel
+
+
+## Open questions:
+- How to ensure FIFO delivery of commands?
+  - IoT rules can't publish directly to FIFO queues. This might not be an issue in    practice because commands will be published by a lambda or a server, not by an IoT rule. For telemetry, out of order delivery seems like it shouldn't be a problem, provided we have accurate timestamps
+- How to deal with SQS message retention limits
+
+# Technical Architecture
+
+TODO
+- System architecture
+- Provisioning security
+- Fault tolerance
+- Clock skew

@@ -88,6 +88,73 @@ data "aws_iot_endpoint" "endpoint" {
 data "aws_region" "current" {}
 data "aws_caller_identity" "current" {}
 
+# Ideally this would be FIFO, but AWS doesn't allow
+# IoT Rules to publish to FIFO queues
+resource "aws_sqs_queue" "telemetry_queue" {
+  name                      = "${var.project_name}-telemetry-queue"
+  delay_seconds             = 0
+  max_message_size          = 262144
+  message_retention_seconds = 1209600  # Updated to maximum (14 days)
+  receive_wait_time_seconds = 10
+}
+
+# IAM Role for IoT Rule
+resource "aws_iam_role" "iot_rule_role" {
+  name = "${var.project_name}-iot-rule-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "iot.amazonaws.com"
+        }
+      }
+    ]
+  })
+}
+
+# IAM Policy for IoT Rule to publish to SQS
+resource "aws_iam_role_policy" "iot_rule_sqs_policy" {
+  name = "${var.project_name}-iot-rule-sqs-policy"
+  role = aws_iam_role.iot_rule_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "sqs:SendMessage"
+        ]
+        Resource = aws_sqs_queue.telemetry_queue.arn
+      }
+    ]
+  })
+}
+
+# AWS IoT Rule
+resource "aws_iot_topic_rule" "telemetry_rule" {
+  name        = "${replace(var.project_name, "-", "_")}_telemetry_rule"
+  description = "Route telemetry messages to SQS FIFO queue"
+  enabled     = true
+  sql         = "SELECT *, topic() as mqtt_topic, timestamp() as mqtt_received_at FROM 'devices/+/telemetry'"
+  sql_version = "2016-03-23"
+
+  sqs {
+    queue_url = aws_sqs_queue.telemetry_queue.id
+    role_arn  = aws_iam_role.iot_rule_role.arn
+    use_base64 = false
+  }
+}
+
+# Output SQS Queue URL
+output "sqs_queue_url" {
+  value = aws_sqs_queue.telemetry_queue.url
+}
+
 # Output the names of created resources
 output "aws_region" {
   value = data.aws_region.current.name

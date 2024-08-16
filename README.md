@@ -26,6 +26,10 @@ TODO:
     npm install
     npm run provision-device -- my-cool-battery device-artifacts/my-cool-battery
 
-## Boot the device
+## Boot a device
 
-TODO
+    cd on-device-client
+    npm install
+    npm run run-device -- ../device-provisioning-service/device-artifacts/battery-100
+
+Several devices can be running in parallel

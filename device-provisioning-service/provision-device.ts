@@ -90,7 +90,7 @@ export async function provisionBattery(thingName: string) {
       thingArn,
       certificateArn: cert.certificateArn,
       certificatePem: cert.certificatePem,
-      iotEndpoint: awsConfig.iot_endpoint,
+      iotEndpoint: awsConfig.iot_endpoint.value,
       privateKey: cert.privateKey,
     };
   } catch (error) {

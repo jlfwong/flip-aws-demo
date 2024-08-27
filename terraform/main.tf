@@ -1,11 +1,19 @@
-# Provider configuration
-provider "aws" {
-  region = "us-west-2"  # or your preferred region
+terraform {
+  backend "s3" {}
 }
 
-# Variables
+variable "region" {
+  type = string
+  description = "The AWS region to use"
+}
+
 variable "project_name" {
-  default = "flip-aws-demo"
+  type = string
+  description = "The name of this project. Will be used to prefix resources."
+}
+
+provider "aws" {
+  region = var.region
 }
 
 # IAM User for device provisioning

@@ -1,12 +1,11 @@
-# Provider configuration
+# Variables
+variable "project_name" {}
+variable "region" {}
+
 provider "aws" {
-  region = "us-west-2"  # or your preferred region
+  region = vars.region
 }
 
-# Variables
-variable "project_name" {
-  default = "flip-aws-demo"
-}
 
 # IAM User for device provisioning
 resource "aws_iam_user" "device_provisioning_user" {

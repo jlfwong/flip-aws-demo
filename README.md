@@ -18,6 +18,7 @@ TODO:
 ## Apply terraform configuration and populate AWS configuration files
 
     cd terraform
+    scripts/setup-state-management.sh</dev/tty
     scripts/apply.sh</dev/tty
 
 ## Provision a device
@@ -47,3 +48,5 @@ TODO
 - Provisioning security
 - Fault tolerance
 - Clock skew
+- Costs
+- Scaling concerns (e.g. lambda concurrenc, lambda batch sizes, SQS queue sizes)

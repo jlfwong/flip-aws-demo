@@ -1,0 +1,5 @@
+export TF_VAR_project_name="flip-aws-demo"
+export TF_VAR_region="us-west-2"
+export TF_VAR_terraform_backend_s3_bucket="flip-aws-terraform-state-bucket"
+export TF_VAR_terraform_backend_s3_key="flip-aws-demo/terraform.tfstate"
+export TF_VAR_terraform_backend_dynamodb_table="flip-aws-terraform-state-lock"

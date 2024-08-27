@@ -7,9 +7,6 @@ It includes...
 - Scripts for device provisioning (IoT Thing creation, certificate provisioning)
 - A mock implementation of an energy device which reports telemetry to Flip and receives commands
 
-TODO:
-- Use s3 terraform backend: https://developer.hashicorp.com/terraform/language/settings/backends/s3
-
 # Setup
 
 - Download aws cli
@@ -18,8 +15,8 @@ TODO:
 ## Apply terraform configuration and populate AWS configuration files
 
     cd terraform
-    scripts/setup-state-management.sh</dev/tty
-    scripts/apply.sh</dev/tty
+    scripts/setup-terraform-backend.sh
+    scripts/apply.sh
 
 ## Provision a device
 
@@ -31,10 +28,9 @@ TODO:
 
     cd on-device-client
     npm install
-    npm run run-device -- ../device-provisioning-service/device-artifacts/battery-100
+    npm run run-device -- ../device-provisioning-service/device-artifacts/my-cool-battery
 
 Several devices can be running in parallel
-
 
 ## Open questions:
 - How to ensure FIFO delivery of commands?

@@ -12,7 +12,7 @@ export function generateRegistrationUrl(
   privateKey: string
 ): string {
   const nonce = crypto.randomBytes(16).toString('hex');
-  const timestamp = `${Math.floor(+new Date() / 1000)}`
+  const timestamp = Math.floor(+new Date() / 1000)
   const version = 1
 
   const payload = JSON.stringify({

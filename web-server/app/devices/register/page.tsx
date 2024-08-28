@@ -1,4 +1,4 @@
-import { FC } from 'react';
+import { verifySignature } from '../../../lib/verify-signature';
 
 interface PayloadData {
   thingName: string;
@@ -7,28 +7,44 @@ interface PayloadData {
   version: number;
 }
 
-const RegisterPage: FC<{ searchParams: { payload: string; signature: string } }> = ({ searchParams }) => {
+export default async function RegisterPage({
+  searchParams,
+}: {
+  searchParams: { payload?: string; signature?: string };
+}) {
   const { payload, signature } = searchParams;
 
   if (!payload || !signature) {
-    return <div className="p-4">
-      <h1 className="text-2xl font-bold mb-4">Error</h1>
-      <p>Missing payload or signature</p>
-    </div>;
+    return (
+      <div className="p-4">
+        <h1 className="text-2xl font-bold mb-4">Error</h1>
+        <p>Missing payload or signature</p>
+      </div>
+    );
   }
 
   let payloadData: PayloadData;
   try {
     payloadData = JSON.parse(decodeURIComponent(payload));
   } catch (error) {
-    return <div className="p-4">
-      <h1 className="text-2xl font-bold mb-4">Error</h1>
-      <p>Invalid payload format</p>
-    </div>;
+    return (
+      <div className="p-4">
+        <h1 className="text-2xl font-bold mb-4">Error</h1>
+        <p>Invalid payload format</p>
+      </div>
+    );
   }
 
   const { thingName, nonce, timestamp, version } = payloadData;
   const decodedTimestamp = new Date(timestamp * 1000);
+
+  let verificationStatus: string;
+  try {
+    await verifySignature(payload, signature);
+    verificationStatus = 'success';
+  } catch (err) {
+    verificationStatus = `${err}`;
+  }
 
   return (
     <div className="p-4">
@@ -39,6 +55,7 @@ const RegisterPage: FC<{ searchParams: { payload: string; signature: string } }>
         <p><strong>Nonce:</strong> {nonce}</p>
         <p><strong>Version:</strong> {version}</p>
         <p><strong>Signature:</strong> {signature}</p>
+        <p><strong>Verification Status:</strong> {verificationStatus}</p>
       </div>
       <div className="mt-4">
         <h2 className="text-xl font-bold mb-2">Raw Payload:</h2>
@@ -46,6 +63,4 @@ const RegisterPage: FC<{ searchParams: { payload: string; signature: string } }>
       </div>
     </div>
   );
-};
-
-export default RegisterPage;
+}

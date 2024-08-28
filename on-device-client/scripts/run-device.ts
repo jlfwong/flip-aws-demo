@@ -1,4 +1,4 @@
-import { AWSIoTClient } from "../AWSIoTClient";
+import { AWSIoTClient } from "../lib/AWSIoTClient";
 
 async function main() {
   if (process.argv.length !== 3) {

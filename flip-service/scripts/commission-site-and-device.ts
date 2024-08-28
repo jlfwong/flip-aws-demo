@@ -25,13 +25,13 @@ function generateRandomNumber(min: number, max: number): number {
 
 function generateSanFranciscoPII() {
   return {
-    id: generateRandomString(8),
+    id: `flip-aws-demo-site-${generateRandomString(8)}`,
     first_name: 'John',
     last_name: 'Doe',
     email: `john.doe${generateRandomString(4)}@example.com`,
     state_code: 'CA',
     city: 'San Francisco',
-    zip_code: '94' + generateRandomNumber(100, 199).toString(),
+    zip_code: '8880' + generateRandomNumber(1, 3).toString(),
     street_address: `${generateRandomNumber(1, 9999)} Market St`,
     street_address2: `Apt ${generateRandomNumber(1, 999)}`,
   };
@@ -39,7 +39,7 @@ function generateSanFranciscoPII() {
 
 function generateFakeDevice() {
   return {
-    id: generateRandomString(8),
+    id: `flip-aws-demo-device-${generateRandomString(8)}`,
     manufacturer_name: 'Generic',
     product_name: 'Battery System',
     type: 'BATTERY',

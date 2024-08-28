@@ -183,3 +183,44 @@ output "device_policy_name" {
 output "iot_endpoint" {
   value = data.aws_iot_endpoint.endpoint.endpoint_address
 }
+
+# IAM User for web server
+resource "aws_iam_user" "web_server_user" {
+  name = "${var.project_name}-web-server-user"
+}
+
+resource "aws_iam_access_key" "web_server_user_key" {
+  user = aws_iam_user.web_server_user.name
+}
+
+# IAM Policy for web server user
+resource "aws_iam_user_policy" "web_server_user_policy" {
+  name = "${var.project_name}-web-server-user-policy"
+  user = aws_iam_user.web_server_user.name
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "iot:DescribeThing",
+          "iot:ListThingPrincipals",
+          "iot:DescribeCertificate"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+# Output the access key and secret for the web server user
+output "web_server_user_access_key" {
+  value     = aws_iam_access_key.web_server_user_key.id
+  sensitive = true
+}
+
+output "web_server_user_secret_key" {
+  value     = aws_iam_access_key.web_server_user_key.secret
+  sensitive = true
+}

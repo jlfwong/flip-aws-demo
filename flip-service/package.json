@@ -1,0 +1,17 @@
+{
+  "name": "flip-service",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "commission-site-and-device": "npx ts-node scripts/commission-site-and-device.ts"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@aws-sdk/client-iot": "3.629.0",
+    "@fakerjs/faker": "3.0.0",
+    "@types/node": "22.2.0",
+    "dotenv": "16.4.5"
+  }
+}

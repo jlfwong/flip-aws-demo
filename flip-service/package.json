@@ -3,6 +3,10 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
+    "dev": "next dev --turbo",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
     "commission-site-and-device": "npx ts-node scripts/commission-site-and-device.ts"
   },
   "author": "",
@@ -10,8 +14,14 @@
   "description": "",
   "dependencies": {
     "@aws-sdk/client-iot": "3.629.0",
-    "@fakerjs/faker": "3.0.0",
     "@types/node": "22.2.0",
-    "dotenv": "16.4.5"
+    "dotenv": "16.4.5",
+    "next": "14.2.7",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.4",
+    "typescript": "5.5.4"
   }
 }

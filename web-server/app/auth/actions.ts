@@ -7,10 +7,15 @@ export async function login(formData: FormData) {
   const supabase = createSupabaseServerClient();
 
   const email = formData.get("email") as string;
+  const redirectTo = formData.get("redirect_to") as string;
+  const decodedRedirectTo = decodeURIComponent(redirectTo);
+
+  console.log(`Sending login link with redirect to ${decodedRedirectTo}`);
+
   const { error } = await supabase.auth.signInWithOtp({
     email,
     options: {
-      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/auth/callback`,
+      emailRedirectTo: decodedRedirectTo,
     },
   });
 

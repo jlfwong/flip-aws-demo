@@ -1,4 +1,5 @@
-import { verifySignature } from '../../../lib/verify-signature';
+import { verifySignature } from "../../../lib/verify-signature";
+import { createSupabaseServerClient } from "../../../lib/supabase-server-client";
 
 interface PayloadData {
   thingName: string;
@@ -13,6 +14,14 @@ export default async function RegisterPage({
   searchParams: { payload?: string; signature?: string };
 }) {
   const { payload, signature } = searchParams;
+
+  // Create Supabase client
+  const supabase = createSupabaseServerClient();
+
+  // Get the current user
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   if (!payload || !signature) {
     return (
@@ -41,25 +50,44 @@ export default async function RegisterPage({
   let verificationStatus: string;
   try {
     await verifySignature(payload, signature);
-    verificationStatus = 'success';
+    verificationStatus = "success";
   } catch (err) {
     verificationStatus = `${err}`;
   }
 
   return (
     <div className="p-4">
-      <h1 className="text-2xl font-bold mb-4">Device Registration Information</h1>
+      <h1 className="text-2xl font-bold mb-4">
+        Device Registration Information
+      </h1>
+      <p className="mb-4">
+        <strong>Logged in as:</strong> {user!.email}
+      </p>
       <div className="space-y-2">
-        <p><strong>Thing Name:</strong> {thingName}</p>
-        <p><strong>Timestamp:</strong> {decodedTimestamp.toLocaleString()}</p>
-        <p><strong>Nonce:</strong> {nonce}</p>
-        <p><strong>Version:</strong> {version}</p>
-        <p><strong>Signature:</strong> {signature}</p>
-        <p><strong>Verification Status:</strong> {verificationStatus}</p>
+        <p>
+          <strong>Thing Name:</strong> {thingName}
+        </p>
+        <p>
+          <strong>Timestamp:</strong> {decodedTimestamp.toLocaleString()}
+        </p>
+        <p>
+          <strong>Nonce:</strong> {nonce}
+        </p>
+        <p>
+          <strong>Version:</strong> {version}
+        </p>
+        <p>
+          <strong>Signature:</strong> {signature}
+        </p>
+        <p>
+          <strong>Verification Status:</strong> {verificationStatus}
+        </p>
       </div>
       <div className="mt-4">
         <h2 className="text-xl font-bold mb-2">Raw Payload:</h2>
-        <pre className="bg-gray-100 p-2 rounded">{JSON.stringify(payloadData, null, 2)}</pre>
+        <pre className="bg-gray-100 p-2 rounded">
+          {JSON.stringify(payloadData, null, 2)}
+        </pre>
       </div>
     </div>
   );

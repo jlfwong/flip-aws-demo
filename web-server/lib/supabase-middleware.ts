@@ -44,9 +44,16 @@ export async function updateSupabaseSession(request: NextRequest) {
       `url is restricted to logged in users: ${request.nextUrl.pathname}. Redirecting to /auth`
     );
 
-    const url = request.nextUrl.clone();
-    url.pathname = "/auth";
-    return NextResponse.redirect(url);
+    const currentUrl = new URL(
+      request.nextUrl.pathname + request.nextUrl.search,
+      request.nextUrl.origin
+    );
+    const encodedRedirectTo = encodeURIComponent(currentUrl.toString());
+
+    const authUrl = new URL("/auth", request.nextUrl.origin);
+    authUrl.searchParams.set("redirect_to", encodedRedirectTo);
+
+    return NextResponse.redirect(authUrl);
   }
 
   // IMPORTANT: You *must* return the supabaseResponse object as it is. If you're

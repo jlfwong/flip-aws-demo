@@ -1,5 +1,3 @@
-// Supabase keys: retrieve from https://supabase.com/dashboard/project/_/settings/api
-
 const safeEnv = {
   AWS_REGION:
     "Available as aws_region in terraform/output/aws-config.json after running terraform",

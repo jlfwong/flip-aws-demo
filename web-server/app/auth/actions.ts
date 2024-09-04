@@ -10,8 +10,6 @@ export async function login(formData: FormData) {
   const redirectTo = formData.get("redirect_to") as string;
   const decodedRedirectTo = decodeURIComponent(redirectTo);
 
-  console.log(`Sending login link with redirect to ${decodedRedirectTo}`);
-
   const { error } = await supabase.auth.signInWithOtp({
     email,
     options: {

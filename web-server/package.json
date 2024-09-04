@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "supabase-types": "supabase gen types --local --lang typescript > lib/supabase-types.ts",
     "commission-site-and-device": "npx ts-node scripts/commission-site-and-device.ts"
   },
   "author": "",

@@ -44,9 +44,12 @@ export async function registerDevice(formData: FormData) {
     safeEnv.FLIP_API_KEY
   );
 
+  const flipSiteId = `site-for-device::${thingName}`;
+  const flipDeviceId = `device::${thingName}`;
+
   const commissionPayload: CommissionPayload = {
     site: {
-      id: `site-for::${thingName}`,
+      id: flipSiteId,
       first_name: formData.get("firstName") as string,
       last_name: formData.get("lastName") as string,
       email: user.email!,
@@ -58,7 +61,7 @@ export async function registerDevice(formData: FormData) {
     },
     devices: [
       {
-        id: `aws-thing-${thingName}`,
+        id: flipDeviceId,
         manufacturer_name: formData.get("manufacturerName") as string,
         product_name: formData.get("productName") as string,
         type: "BATTERY",
@@ -88,11 +91,26 @@ export async function registerDevice(formData: FormData) {
   try {
     const result = await client.commission(commissionPayload);
     console.log("Commission result:", JSON.stringify(result, null, 2));
-    return result;
   } catch (error) {
     // TODO(jlfwong): Handle duplicate registration
     // This manifests as an HTTP 409 error from Flip.
     console.error("Error during commission:", error);
     throw error;
   }
+
+  const { data: insertedDevice, error: insertError } = await supabase
+    .from("devices")
+    .insert({
+      aws_thing_name: thingName,
+      flip_device_id: flipDeviceId,
+      flip_site_id: flipSiteId,
+      user_id: user.id,
+    });
+
+  if (insertError) {
+    console.error("Error inserting device into Supabase:", insertError);
+    throw insertError;
+  }
+
+  console.log("Device inserted into Supabase:", insertedDevice);
 }

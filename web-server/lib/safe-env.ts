@@ -13,6 +13,9 @@ const safeEnv = {
   SUPABASE_SERVICE_KEY:
     "Retrieve from https://supabase.com/dashboard/project/_/settings/api",
 
+  FLIP_API_URL: "From https://developers.flip.energy/settings/credentials",
+  FLIP_API_KEY: "From https://developers.flip.energy/settings/credentials",
+
   NEXT_PUBLIC_SITE_URL: "Should be http://localhost:3000 in development",
 };
 

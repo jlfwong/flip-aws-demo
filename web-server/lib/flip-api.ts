@@ -73,24 +73,29 @@ interface Device {
   manufacturer_name: string;
   product_name: string;
   serial_number: string;
+  type: "BATTERY";
   attributes: DeviceAttributes;
   configuration: DeviceConfiguration;
   install_date: string;
 }
 
-interface CommissionPayload {
+export interface CommissionPayload {
   site: Site;
   devices: Device[];
   can_auto_enroll: boolean;
 }
 
 export class FlipClientApiClient {
-  constructor(private baseUrl: string, private clientToken: string) { }
+  constructor(private baseUrl: string, private clientToken: string) {}
 
-  private async makeRequest<T>(endpoint: string, method: string, body?: any): Promise<T> {
+  private async makeRequest<T>(
+    endpoint: string,
+    method: string,
+    body?: any
+  ): Promise<T> {
     const headers = new Headers({
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${this.clientToken}`
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${this.clientToken}`,
     });
 
     const response = await fetch(`${this.baseUrl}${endpoint}`, {
@@ -100,7 +105,7 @@ export class FlipClientApiClient {
     });
 
     if (!response.ok) {
-      const body = await response.text()
+      const body = await response.text();
       throw new Error(`HTTP error! status: ${response.status}. Body: ${body}`);
     }
 
@@ -108,6 +113,10 @@ export class FlipClientApiClient {
   }
 
   async commission(payload: CommissionPayload): Promise<CommissionResponse> {
-    return this.makeRequest<CommissionResponse>('/v1/commission', 'POST', payload);
+    return this.makeRequest<CommissionResponse>(
+      "/v1/commission",
+      "POST",
+      payload
+    );
   }
 }

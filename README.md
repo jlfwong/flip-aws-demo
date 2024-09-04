@@ -45,9 +45,8 @@ need to modify the email templates Supabase uses by default.
 To do this:
 
 1. Go to the [Auth templates](https://supabase.com/dashboard/project/_/auth/templates) page in your Supabase dashboard.
-2. In the `Confirm signup` template, change `{{ .ConfirmationURL }}` to `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=signup&redirect_to={{ .RedirectTo }}`.
-3. In the `Magic link` tempalte, change it to `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=magiclink&redirect_to={{ .RedirectTo }}`
-4. Update the [Redirect URLs list](https://supabase.com/dashboard/project/_/auth/url-configuration) to include `http://localhost:3000/**`.
+2. In the `Magic link` tempalte, change `{{ .ConfirmationURL }}` to `{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=magiclink&redirect_to={{ .RedirectTo }}`
+3. Update the [Redirect URLs list](https://supabase.com/dashboard/project/_/auth/url-configuration) to include `http://localhost:3000/**`.
 
 See: https://supabase.com/docs/guides/auth/server-side/nextjs?queryGroups=router&router=app
 

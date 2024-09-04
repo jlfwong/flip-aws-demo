@@ -1,4 +1,10 @@
-import { verifySignature } from "../../../lib/verify-signature";
+import { AWSThings } from "../../../lib/aws-things";
+import {
+  flipAdminApiClient,
+  FlipAdminApiClient,
+  FlipSiteApiClient,
+} from "../../../lib/flip-api";
+import { SupabaseDevices } from "../../../lib/supabase-devices";
 import { createSupabaseServerClient } from "../../../lib/supabase-server-client";
 import { registerDevice } from "./actions";
 
@@ -48,9 +54,20 @@ export default async function RegisterPage({
   const { thingName, nonce, timestamp, version } = payloadData;
   const decodedTimestamp = new Date(timestamp * 1000);
 
+  const flipSiteId = FlipSiteApiClient.siteIdForThingName(thingName);
+  const flipDeviceId = FlipSiteApiClient.deviceIdForThingName(thingName);
+
+  const [awsThing, supabaseDevice, flipDevice] = await Promise.all([
+    AWSThings.getThingMetadata(thingName),
+    SupabaseDevices.byAWSThingName(supabase, thingName),
+    flipAdminApiClient
+      .getSiteClient(flipSiteId)
+      .then((siteClient) => siteClient?.getDeviceOrNull(flipDeviceId)),
+  ]);
+
   let verificationStatus: string;
   try {
-    await verifySignature(payload, signature);
+    await AWSThings.verifyDeviceSignature(payload, signature);
     verificationStatus = "success";
   } catch (err) {
     verificationStatus = `${err}`;
@@ -64,6 +81,28 @@ export default async function RegisterPage({
       <p className="mb-4">
         <strong>Logged in as:</strong> {user!.email}
       </p>
+      {awsThing && (
+        <div className="space-y-2">
+          <p>
+            <strong>AWS IoT Thing:</strong> {JSON.stringify(awsThing)}
+          </p>
+        </div>
+      )}
+      {supabaseDevice && (
+        <div className="space-y-2">
+          <p>
+            <strong>Supabase DB Record:</strong>{" "}
+            {JSON.stringify(supabaseDevice)}
+          </p>
+        </div>
+      )}
+      {flipDevice && (
+        <div className="space-y-2">
+          <p>
+            <strong>Flip API Record:</strong> {JSON.stringify(flipDevice)}
+          </p>
+        </div>
+      )}
       <div className="space-y-2">
         <p>
           <strong>Thing Name:</strong> {thingName}

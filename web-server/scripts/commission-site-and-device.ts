@@ -1,22 +1,24 @@
-import * as dotenv from 'dotenv';
-import { FlipClientApiClient } from '../lib/flip-api';
+import * as dotenv from "dotenv";
+import { FlipAdminApiClient } from "../lib/flip-api";
 
 dotenv.config();
 
 const FLIP_API_KEY = process.env.FLIP_API_KEY;
 if (!FLIP_API_KEY) {
-  console.error('FLIP_API_KEY is not set in the environment variables');
+  console.error("FLIP_API_KEY is not set in the environment variables");
   process.exit(1);
 }
 
 const FLIP_API_URL = process.env.FLIP_API_URL;
 if (!FLIP_API_URL) {
-  console.error('FLIP_API_URL is not set in the environment variables');
+  console.error("FLIP_API_URL is not set in the environment variables");
   process.exit(1);
 }
 
 function generateRandomString(length: number): string {
-  return Math.random().toString(36).substring(2, length + 2);
+  return Math.random()
+    .toString(36)
+    .substring(2, length + 2);
 }
 
 function generateRandomNumber(min: number, max: number): number {
@@ -26,12 +28,12 @@ function generateRandomNumber(min: number, max: number): number {
 function generateSanFranciscoPII() {
   return {
     id: `flip-aws-demo-site-${generateRandomString(8)}`,
-    first_name: 'John',
-    last_name: 'Doe',
+    first_name: "John",
+    last_name: "Doe",
     email: `john.doe${generateRandomString(4)}@example.com`,
-    state_code: 'CA',
-    city: 'San Francisco',
-    zip_code: '8880' + generateRandomNumber(1, 3).toString(),
+    state_code: "CA",
+    city: "San Francisco",
+    zip_code: "8880" + generateRandomNumber(1, 3).toString(),
     street_address: `${generateRandomNumber(1, 9999)} Market St`,
     street_address2: `Apt ${generateRandomNumber(1, 999)}`,
   };
@@ -40,9 +42,9 @@ function generateSanFranciscoPII() {
 function generateFakeDevice() {
   return {
     id: `flip-aws-demo-device-${generateRandomString(8)}`,
-    manufacturer_name: 'Generic',
-    product_name: 'Battery System',
-    type: 'BATTERY',
+    manufacturer_name: "Generic",
+    product_name: "Battery System",
+    type: "BATTERY",
     serial_number: `GEN-${generateRandomString(8).toUpperCase()}`,
     attributes: {
       battery_capacity_wh: generateRandomNumber(3000, 10000),
@@ -57,7 +59,7 @@ function generateFakeDevice() {
 }
 
 async function main() {
-  const client = new FlipClientApiClient(FLIP_API_URL, FLIP_API_KEY);
+  const client = new FlipAdminApiClient(FLIP_API_URL, FLIP_API_KEY);
 
   const payload = {
     site: generateSanFranciscoPII(),
@@ -67,9 +69,9 @@ async function main() {
 
   try {
     const result = await client.commission(payload);
-    console.log('Commission result:', JSON.stringify(result, null, 2));
+    console.log("Commission result:", JSON.stringify(result, null, 2));
   } catch (error) {
-    console.error('Error during commission:', error);
+    console.error("Error during commission:", error);
   }
 }
 

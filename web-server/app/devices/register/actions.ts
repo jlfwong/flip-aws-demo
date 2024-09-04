@@ -1,58 +1,26 @@
 "use server";
 
-import { CommissionPayload, FlipClientApiClient } from "../../../lib/flip-api";
+import { AWSThings } from "../../../lib/aws-things";
+import {
+  CommissionPayload,
+  FlipAdminApiClient,
+  FlipSiteApiClient,
+} from "../../../lib/flip-api";
 import safeEnv from "../../../lib/safe-env";
 import { createSupabaseServerClient } from "../../../lib/supabase-server-client";
-import { verifySignature } from "../../../lib/verify-signature";
 
-export async function registerDevice(formData: FormData) {
-  const supabase = createSupabaseServerClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    throw new Error("User not authenticated");
-  }
-
-  const payload = formData.get("payload") as string;
-  const signature = formData.get("signature") as string;
-
-  if (!payload || !signature) {
-    throw new Error("Missing payload or signature");
-  }
-
-  try {
-    await verifySignature(payload, signature);
-  } catch (err) {
-    throw new Error(`Signature verification failed: ${err}`);
-  }
-
-  let payloadData;
-  try {
-    payloadData = JSON.parse(decodeURIComponent(payload));
-  } catch (error) {
-    throw new Error("Invalid payload format");
-  }
-
-  const { thingName } = payloadData;
-
-  // You can now use thingName or other data from payloadData in your payload construction
-
-  const client = new FlipClientApiClient(
-    safeEnv.FLIP_API_URL,
-    safeEnv.FLIP_API_KEY
-  );
-
-  const flipSiteId = `site-for-device::${thingName}`;
-  const flipDeviceId = `device::${thingName}`;
-
-  const commissionPayload: CommissionPayload = {
+function createCommissionPayload(
+  formData: FormData,
+  flipSiteId: string,
+  flipDeviceId: string,
+  userEmail: string
+): CommissionPayload {
+  return {
     site: {
       id: flipSiteId,
       first_name: formData.get("firstName") as string,
       last_name: formData.get("lastName") as string,
-      email: user.email!,
+      email: userEmail,
       state_code: formData.get("stateCode") as string,
       city: formData.get("city") as string,
       zip_code: formData.get("zipCode") as string,
@@ -87,6 +55,54 @@ export async function registerDevice(formData: FormData) {
     ],
     can_auto_enroll: true,
   };
+}
+
+export async function registerDevice(formData: FormData) {
+  const supabase = createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    throw new Error("User not authenticated");
+  }
+
+  const payload = formData.get("payload") as string;
+  const signature = formData.get("signature") as string;
+
+  if (!payload || !signature) {
+    throw new Error("Missing payload or signature");
+  }
+
+  try {
+    await AWSThings.verifyDeviceSignature(payload, signature);
+  } catch (err) {
+    throw new Error(`Signature verification failed: ${err}`);
+  }
+
+  let payloadData;
+  try {
+    payloadData = JSON.parse(decodeURIComponent(payload));
+  } catch (error) {
+    throw new Error("Invalid payload format");
+  }
+
+  const { thingName } = payloadData;
+
+  const client = new FlipAdminApiClient(
+    safeEnv.FLIP_API_URL,
+    safeEnv.FLIP_API_KEY
+  );
+
+  const flipSiteId = FlipSiteApiClient.siteIdForThingName(thingName);
+  const flipDeviceId = FlipSiteApiClient.deviceIdForThingName(thingName);
+
+  const commissionPayload = createCommissionPayload(
+    formData,
+    flipSiteId,
+    flipDeviceId,
+    user.email!
+  );
 
   try {
     const result = await client.commission(commissionPayload);

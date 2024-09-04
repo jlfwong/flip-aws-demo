@@ -1,3 +1,5 @@
+import safeEnv from "./safe-env";
+
 interface EnrollmentFormField {
   name: string;
   label: string;
@@ -79,30 +81,54 @@ interface Device {
   install_date: string;
 }
 
+export interface SiteToken {
+  expires_at: Date;
+  site_access_token: string;
+}
+
 export interface CommissionPayload {
   site: Site;
   devices: Device[];
   can_auto_enroll: boolean;
 }
 
-export class FlipClientApiClient {
-  constructor(private baseUrl: string, private clientToken: string) {}
+class FlipApiRequester {
+  constructor(private baseUrl: string, private authToken: string) {}
 
-  private async makeRequest<T>(
+  private async makeRequest(
     endpoint: string,
     method: string,
     body?: any
-  ): Promise<T> {
+  ): Promise<Response> {
     const headers = new Headers({
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${this.clientToken}`,
+      "Content-Type": body != null ? "application/json" : "text/plain",
+      Authorization: `Bearer ${this.authToken}`,
     });
 
-    const response = await fetch(`${this.baseUrl}${endpoint}`, {
+    return await fetch(`${this.baseUrl}${endpoint}`, {
       method,
       headers,
       body: body ? JSON.stringify(body) : undefined,
     });
+  }
+
+  async POST(endpoint: string, body: any): Promise<Response> {
+    return this.makeRequest(endpoint, "POST", body);
+  }
+
+  async GET(endpoint: string): Promise<Response> {
+    return this.makeRequest(endpoint, "GET");
+  }
+}
+
+export class FlipAdminApiClient {
+  private req: FlipApiRequester;
+  constructor(private baseUrl: string, clientToken: string) {
+    this.req = new FlipApiRequester(baseUrl, clientToken);
+  }
+
+  async commission(payload: CommissionPayload): Promise<CommissionResponse> {
+    const response = await this.req.POST("/v1/commission", payload);
 
     if (!response.ok) {
       const body = await response.text();
@@ -112,11 +138,66 @@ export class FlipClientApiClient {
     return response.json();
   }
 
-  async commission(payload: CommissionPayload): Promise<CommissionResponse> {
-    return this.makeRequest<CommissionResponse>(
-      "/v1/commission",
-      "POST",
-      payload
+  async getSiteToken(siteId: string): Promise<SiteToken | null> {
+    const response = await this.req.POST(
+      `/v1/auth/site/${encodeURIComponent(siteId)}`,
+      null
     );
+
+    if (!response.ok) {
+      if (response.status === 404) {
+        return null;
+      }
+      const body = await response.text();
+      throw new Error(`HTTP error! status: ${response.status}. Body: ${body}`);
+    }
+
+    return response.json();
+  }
+
+  async getSiteClient(siteId: string): Promise<FlipSiteApiClient | null> {
+    const token = await this.getSiteToken(siteId);
+    if (!token) return null;
+    return new FlipSiteApiClient(this.baseUrl, siteId, token.site_access_token);
   }
 }
+
+export class FlipSiteApiClient {
+  private req: FlipApiRequester;
+  constructor(
+    private baseUrl: string,
+    private siteId: string,
+    siteToken: string
+  ) {
+    this.req = new FlipApiRequester(baseUrl, siteToken);
+  }
+
+  async getDeviceOrNull(deviceId: string): Promise<Device | null> {
+    const response = await this.req.GET(
+      `/v1/site/${this.siteId}/device/${deviceId}`
+    );
+
+    if (!response.ok) {
+      if (response.status === 404) {
+        return null;
+      }
+      const body = await response.text();
+      throw new Error(`HTTP error! status: ${response.status}. Body: ${body}`);
+    }
+
+    return response.json() as any as Device;
+  }
+
+  static siteIdForThingName(thingName: string): string {
+    return `site-for-device::${thingName}`;
+  }
+
+  static deviceIdForThingName(thingName: string): string {
+    return `device::${thingName}`;
+  }
+}
+
+export const flipAdminApiClient = new FlipAdminApiClient(
+  safeEnv.FLIP_API_URL,
+  safeEnv.FLIP_API_KEY
+);

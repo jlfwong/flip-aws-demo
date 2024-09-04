@@ -1,8 +1,11 @@
 import {
+  ThingAttribute,
   IoTClient,
-  DescribeThingCommand,
   ListThingPrincipalsCommand,
   DescribeCertificateCommand,
+  DescribeThingCommand,
+  ResourceNotFoundException,
+  DescribeThingCommandOutput,
 } from "@aws-sdk/client-iot";
 import crypto from "crypto";
 import safeEnv from "./safe-env";
@@ -70,34 +73,52 @@ function isTimestampValid(timestamp: number): boolean {
   return now - timestamp <= maxAgeSeconds;
 }
 
-export async function verifySignature(
-  payload: string,
-  signature: string
-): Promise<void> {
-  // TODO(jlfwong): Respect the nonce to prevent replay attacks
+export namespace AWSThings {
+  export async function getThingMetadata(
+    thingName: string
+  ): Promise<DescribeThingCommandOutput | null> {
+    const command = new DescribeThingCommand({ thingName });
 
-  const payloadObj = JSON.parse(payload);
-  const { thingName, timestamp } = payloadObj;
-
-  if (!thingName) {
-    throw new Error("Missing thingName in payload");
-  }
-
-  if (!timestamp || typeof timestamp !== "number") {
-    throw new Error("Invalid or missing timestamp in payload");
-  }
-
-  if (!isTimestampValid(timestamp)) {
-    throw new Error("Timestamp is too old");
-  }
-
-  const publicKeys = await getValidPublicKeys(thingName);
-
-  for (const publicKey of publicKeys) {
-    if (verifySignatureWithPublicKey(payload, signature, publicKey)) {
-      return; // Signature is valid
+    try {
+      const response = await iotClient.send(command);
+      return response || null;
+    } catch (error) {
+      if (error instanceof ResourceNotFoundException) {
+        return null;
+      }
+      throw error;
     }
   }
 
-  throw new Error("Invalid signature");
+  export async function verifyDeviceSignature(
+    payload: string,
+    signature: string
+  ): Promise<void> {
+    // TODO(jlfwong): Respect the nonce to prevent replay attacks
+
+    const payloadObj = JSON.parse(payload);
+    const { thingName, timestamp } = payloadObj;
+
+    if (!thingName) {
+      throw new Error("Missing thingName in payload");
+    }
+
+    if (!timestamp || typeof timestamp !== "number") {
+      throw new Error("Invalid or missing timestamp in payload");
+    }
+
+    if (!isTimestampValid(timestamp)) {
+      throw new Error("Timestamp is too old");
+    }
+
+    const publicKeys = await getValidPublicKeys(thingName);
+
+    for (const publicKey of publicKeys) {
+      if (verifySignatureWithPublicKey(payload, signature, publicKey)) {
+        return; // Signature is valid
+      }
+    }
+
+    throw new Error("Invalid signature");
+  }
 }

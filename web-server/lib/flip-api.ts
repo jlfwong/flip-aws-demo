@@ -81,6 +81,35 @@ interface Device {
   install_date: string;
 }
 
+interface TelemetryDeviceStatus {
+  device_id: string;
+  last_is_online: boolean;
+  last_mode: string;
+  battery_last_power_charge_w: number;
+  battery_last_power_discharge_w: number;
+  battery_total_energy_charge_wh: number;
+  battery_total_energy_discharge_wh: number;
+  battery_last_stored_energy_wh: number;
+  battery_last_capacity_energy_wh: number;
+  battery_last_backup_reserve_percentage: number;
+  last_is_grid_online: boolean;
+  home_total_energy_wh: number;
+  home_last_power_w: number;
+  solar_total_energy_wh: number;
+  solar_last_power_w: number;
+}
+
+export interface FlipTelemetryPayload {
+  start_time: string;
+  duration_s: number;
+  telemetry: TelemetryDeviceStatus[];
+}
+
+type TelemetryResponse = {
+  status: "FAILED" | "OK";
+  message: string;
+}[];
+
 export interface SiteToken {
   expires_at: Date;
   site_access_token: string;
@@ -136,6 +165,24 @@ export class FlipAdminApiClient {
     }
 
     return response.json();
+  }
+
+  async logBatteryTelemetry(payload: FlipTelemetryPayload): Promise<void> {
+    console.log("Sending", payload);
+    const response = await this.req.POST("/v1/telemetry/BATTERY", payload);
+
+    if (!response.ok) {
+      const body = await response.text();
+      throw new Error(`HTTP error! status: ${response.status}. Body: ${body}`);
+    }
+
+    const body = (await response.json()) as TelemetryResponse;
+
+    for (const result of body) {
+      if (result.status !== "OK") {
+        throw new Error(`Failed to log telemetry: ${result.message}`);
+      }
+    }
   }
 
   async getSiteToken(siteId: string): Promise<SiteToken | null> {

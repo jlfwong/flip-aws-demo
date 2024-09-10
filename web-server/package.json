@@ -1,0 +1,30 @@
+{
+  "name": "flip-service",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "dev": "next dev --turbo",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "supabase-types": "supabase gen types --local --lang typescript > lib/supabase-types.ts",
+    "commission-site-and-device": "npx ts-node scripts/commission-site-and-device.ts"
+  },
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "@aws-sdk/client-iot": "3.629.0",
+    "@supabase/ssr": "0.5.1",
+    "@supabase/supabase-js": "2.45.2",
+    "@types/node": "22.2.0",
+    "dotenv": "16.4.5",
+    "next": "14.2.7",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.4",
+    "typescript": "5.5.4"
+  }
+}

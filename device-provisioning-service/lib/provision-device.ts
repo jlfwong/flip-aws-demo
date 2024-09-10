@@ -24,7 +24,7 @@ interface AWSConfig {
   };
 }
 
-import * as awsConfigRaw from "../terraform/output/aws-config.json";
+import * as awsConfigRaw from "../../terraform/output/aws-config.json";
 const awsConfig = awsConfigRaw as AWSConfig;
 
 const region = awsConfig.aws_region.value;

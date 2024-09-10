@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "run-device": "npx ts-node scripts/run-device.ts"
+    "run-device": "npx ts-node scripts/run-device.ts",
+    "generate-registration-url": "npx ts-node scripts/generate-registration-url.ts"
   },
   "author": "",
   "license": "ISC",

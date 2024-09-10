@@ -1,4 +1,4 @@
-import { provisionBattery } from "../provision-device";
+import { provisionBattery } from "../lib/provision-device";
 import * as fs from "fs";
 import * as path from "path";
 

@@ -15,8 +15,6 @@ export class AWSIoTClient {
       const deviceInfoPath = path.join(this.artifactsPath, "device-info.json");
       this.deviceInfo = JSON.parse(fs.readFileSync(deviceInfoPath, "utf-8"));
 
-      console.log("Loaded deviceInfo", this.deviceInfo);
-
       if (
         !this.deviceInfo.iotEndpoint ||
         typeof this.deviceInfo.iotEndpoint !== "string"
@@ -29,12 +27,16 @@ export class AWSIoTClient {
     }
   }
 
+  public privateKeyPath(): string {
+    return path.join(this.artifactsPath, "private-key.pem")
+  }
+
   async connect(): Promise<void> {
     try {
       const config =
         iot.AwsIotMqttConnectionConfigBuilder.new_mtls_builder_from_path(
           path.join(this.artifactsPath, "certificate.pem"),
-          path.join(this.artifactsPath, "private-key.pem")
+          this.privateKeyPath()
         );
 
       config.with_certificate_authority_from_path(

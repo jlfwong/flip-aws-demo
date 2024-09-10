@@ -12,6 +12,11 @@ variable "project_name" {
   description = "The name of this project. Will be used to prefix resources."
 }
 
+variable "test_email" {
+  type = string
+  description = "Email to use for testing. Set to use Amazon SES to send emails in debug"
+}
+
 provider "aws" {
   region = var.region
 }
@@ -182,4 +187,94 @@ output "device_policy_name" {
 
 output "iot_endpoint" {
   value = data.aws_iot_endpoint.endpoint.endpoint_address
+}
+
+# IAM User for web server
+resource "aws_iam_user" "web_server_user" {
+  name = "${var.project_name}-web-server-user"
+}
+
+resource "aws_iam_access_key" "web_server_user_key" {
+  user = aws_iam_user.web_server_user.name
+}
+
+# IAM Policy for web server user
+resource "aws_iam_user_policy" "web_server_user_policy" {
+  name = "${var.project_name}-web-server-user-policy"
+  user = aws_iam_user.web_server_user.name
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "iot:DescribeThing",
+          "iot:ListThingPrincipals",
+          "iot:DescribeCertificate"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+# SES Email Identity
+resource "aws_ses_email_identity" "personal_email" {
+  email = var.test_email
+}
+
+# IAM User for SMTP credentials
+resource "aws_iam_user" "ses_smtp_user" {
+  name = "ses-smtp-user"
+}
+
+# IAM User Policy for SES sending
+resource "aws_iam_user_policy" "ses_smtp_policy" {
+  name = "ses-smtp-policy"
+  user = aws_iam_user.ses_smtp_user.name
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "ses:SendRawEmail",
+          "ses:SendEmail"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+}
+
+output "smtp_host" {
+  value = "email-smtp.${var.region}.amazonaws.com"
+}
+
+# Generate SMTP credentials
+resource "aws_iam_access_key" "ses_smtp_user_key" {
+  user = aws_iam_user.ses_smtp_user.name
+}
+
+# Output SMTP credentials (Be cautious with these!)
+output "smtp_username" {
+  value = aws_iam_access_key.ses_smtp_user_key.id
+}
+
+output "smtp_password" {
+  value     = aws_iam_access_key.ses_smtp_user_key.ses_smtp_password_v4
+  sensitive = true
+}
+
+# Output the access key and secret for the web server user
+output "web_server_user_access_key" {
+  value     = aws_iam_access_key.web_server_user_key.id
+  sensitive = true
+}
+
+output "web_server_user_secret_key" {
+  value     = aws_iam_access_key.web_server_user_key.secret
+  sensitive = true
 }

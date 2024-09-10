@@ -1,0 +1,203 @@
+import safeEnv from "./safe-env";
+
+interface EnrollmentFormField {
+  name: string;
+  label: string;
+  type: string;
+}
+
+interface Program {
+  id: string;
+  name: string;
+  description: string;
+  eligible_device_types: string[];
+  can_auto_enroll: boolean;
+  minimum_commitment_months: number;
+  participation_months: number[];
+  earnings_for_site_upfront: number;
+  earnings_for_site_yearly: number;
+  created_at: string;
+  updated_at: string;
+  enrollment_form: EnrollmentFormField[];
+  terms_and_conditions_version: string;
+  terms_and_conditions_text: string;
+}
+
+interface ProgramSpecificAttribute {
+  name: string;
+  value: string;
+}
+
+interface Enrollment {
+  id: string;
+  device_ids: string[];
+  site_id: string;
+  program_id: string;
+  enroll_method: string;
+  status: string;
+  status_reason: string;
+  enrolled_at: string;
+  unenrolled_at: string;
+  program_specific_attributes: ProgramSpecificAttribute[];
+  has_agreed_to_terms_and_conditions: boolean;
+  terms_and_conditions_version: string;
+}
+
+interface CommissionResponse {
+  programs: Program[];
+  enrollment: Enrollment;
+}
+
+interface Site {
+  id: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+  state_code: string;
+  city: string;
+  zip_code: string;
+  street_address: string;
+  street_address2: string;
+}
+
+interface DeviceAttributes {
+  battery_capacity_wh: number;
+  battery_power_input_w: number;
+  battery_power_output_w: number;
+}
+
+interface DeviceConfiguration {
+  reserve_percentage: number;
+}
+
+interface Device {
+  id: string;
+  manufacturer_name: string;
+  product_name: string;
+  serial_number: string;
+  type: "BATTERY";
+  attributes: DeviceAttributes;
+  configuration: DeviceConfiguration;
+  install_date: string;
+}
+
+export interface SiteToken {
+  expires_at: Date;
+  site_access_token: string;
+}
+
+export interface CommissionPayload {
+  site: Site;
+  devices: Device[];
+  can_auto_enroll: boolean;
+}
+
+class FlipApiRequester {
+  constructor(private baseUrl: string, private authToken: string) {}
+
+  private async makeRequest(
+    endpoint: string,
+    method: string,
+    body?: any
+  ): Promise<Response> {
+    const headers = new Headers({
+      "Content-Type": body != null ? "application/json" : "text/plain",
+      Authorization: `Bearer ${this.authToken}`,
+    });
+
+    return await fetch(`${this.baseUrl}${endpoint}`, {
+      method,
+      headers,
+      body: body ? JSON.stringify(body) : undefined,
+    });
+  }
+
+  async POST(endpoint: string, body: any): Promise<Response> {
+    return this.makeRequest(endpoint, "POST", body);
+  }
+
+  async GET(endpoint: string): Promise<Response> {
+    return this.makeRequest(endpoint, "GET");
+  }
+}
+
+export class FlipAdminApiClient {
+  private req: FlipApiRequester;
+  constructor(private baseUrl: string, clientToken: string) {
+    this.req = new FlipApiRequester(baseUrl, clientToken);
+  }
+
+  async commission(payload: CommissionPayload): Promise<CommissionResponse> {
+    const response = await this.req.POST("/v1/commission", payload);
+
+    if (!response.ok) {
+      const body = await response.text();
+      throw new Error(`HTTP error! status: ${response.status}. Body: ${body}`);
+    }
+
+    return response.json();
+  }
+
+  async getSiteToken(siteId: string): Promise<SiteToken | null> {
+    const response = await this.req.POST(
+      `/v1/auth/site/${encodeURIComponent(siteId)}`,
+      null
+    );
+
+    if (!response.ok) {
+      if (response.status === 404) {
+        return null;
+      }
+      const body = await response.text();
+      throw new Error(`HTTP error! status: ${response.status}. Body: ${body}`);
+    }
+
+    return response.json();
+  }
+
+  async getSiteClient(siteId: string): Promise<FlipSiteApiClient | null> {
+    const token = await this.getSiteToken(siteId);
+    if (!token) return null;
+    return new FlipSiteApiClient(this.baseUrl, siteId, token.site_access_token);
+  }
+}
+
+export class FlipSiteApiClient {
+  private req: FlipApiRequester;
+  constructor(
+    private baseUrl: string,
+    private siteId: string,
+    siteToken: string
+  ) {
+    this.req = new FlipApiRequester(baseUrl, siteToken);
+  }
+
+  async getDeviceOrNull(deviceId: string): Promise<Device | null> {
+    const response = await this.req.GET(
+      `/v1/site/${this.siteId}/device/${deviceId}`
+    );
+
+    if (!response.ok) {
+      if (response.status === 404) {
+        return null;
+      }
+      const body = await response.text();
+      throw new Error(`HTTP error! status: ${response.status}. Body: ${body}`);
+    }
+
+    return response.json() as any as Device;
+  }
+
+  static siteIdForThingName(thingName: string): string {
+    return `site-for-device::${thingName}`;
+  }
+
+  static deviceIdForThingName(thingName: string): string {
+    return `device::${thingName}`;
+  }
+}
+
+export const flipAdminApiClient = new FlipAdminApiClient(
+  safeEnv.FLIP_API_URL,
+  safeEnv.FLIP_API_KEY
+);

@@ -270,7 +270,7 @@ resource "aws_cloudwatch_event_connection" "telemetry_http_connection" {
 # API Destination for HTTP endpoint
 resource "aws_cloudwatch_event_api_destination" "telemetry_http_destination" {
   name                             = "${var.project_name}-telemetry-http-destination"
-  invocation_endpoint              = "https://83e9-157-131-170-91.ngrok-free.app/devices/telemetry"
+  invocation_endpoint              = "https://83e9-157-131-170-91.ngrok-free.app/api/devices/telemetry"
   http_method                      = "POST"
   invocation_rate_limit_per_second = 300
   connection_arn                   = aws_cloudwatch_event_connection.telemetry_http_connection.arn

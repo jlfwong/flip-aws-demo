@@ -5,6 +5,8 @@ const safeEnv = {
     "Available as web_server_user_access_key in terraform/output/aws-config.json after running terraform",
   AWS_SECRET_KEY:
     "Available as web_server_user_secret_key in terraform/output/aws-config.json after running terraform",
+  WEB_SERVER_SHARED_SECRET:
+    "Available as web_server_shared_secret in terraform/output/aws-config.json after running terraform",
 
   NEXT_PUBLIC_SUPABASE_URL:
     "Retrieve from https://supabase.com/dashboard/project/_/settings/api",

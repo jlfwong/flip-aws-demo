@@ -4,6 +4,7 @@ import {
   FlipSiteApiClient,
   FlipTelemetryPayload,
 } from "../../../../lib/flip-api";
+import { createSupabaseServiceRoleClient } from "../../../../lib/supabase-service-client";
 
 interface TelemetryPayload {
   body: string;
@@ -40,13 +41,35 @@ export async function POST(request: Request) {
 
     console.log("Received telemetry body:", JSON.stringify(body, null, 2));
 
-    const deviceIdMatch = body.mqtt_topic.match(
+    const awsThingNameMatch = body.mqtt_topic.match(
       /^devices\/([^/]+)\/telemetry$/
     );
-    if (!deviceIdMatch) {
+    if (!awsThingNameMatch) {
       throw new Error(`Invalid mqtt_topic format: ${body.mqtt_topic}`);
     }
-    const deviceId = FlipSiteApiClient.deviceIdForThingName(deviceIdMatch[1]);
+    const awsThingName = awsThingNameMatch[1];
+
+    const { data, error } = await createSupabaseServiceRoleClient()
+      .from("devices")
+      .select("flip_device_id")
+      .eq("aws_thing_name", awsThingName)
+      .maybeSingle();
+
+    if (error) {
+      throw new Error(`Error fetching device from database: ${error.details}`);
+    }
+
+    if (!data) {
+      console.log(`Device ${awsThingName} is not registered. Ignoring.`);
+
+      // Device not registered, return early with a 200
+      return NextResponse.json(
+        { message: "Telemetry received for unregistered device" },
+        { status: 200 }
+      );
+    }
+
+    const flipDeviceId = data.flip_device_id;
 
     const telemetry: FlipTelemetryPayload = {
       start_time: new Date(
@@ -58,7 +81,7 @@ export async function POST(request: Request) {
 
       telemetry: [
         {
-          device_id: deviceId,
+          device_id: flipDeviceId,
           last_is_online: true,
           ...body.telemetry,
         },

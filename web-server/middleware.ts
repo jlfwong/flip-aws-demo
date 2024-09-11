@@ -11,7 +11,7 @@ function validateApiKey(request: NextRequest) {
 
   const token = authHeader.split(" ")[1];
 
-  if (token !== safeEnv.WEB_SERVER_SHARED_SECRET + "nope") {
+  if (token !== safeEnv.WEB_SERVER_SHARED_SECRET) {
     return new Response("Forbidden", { status: 403 });
   }
 

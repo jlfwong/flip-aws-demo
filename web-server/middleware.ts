@@ -1,8 +1,30 @@
-import { type NextRequest } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { updateSupabaseSession } from "./lib/supabase-middleware";
+import safeEnv from "./lib/safe-env";
+
+function validateApiKey(request: NextRequest) {
+  const authHeader = request.headers.get("Authorization");
+
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return new Response("Unauthorized", { status: 401 });
+  }
+
+  const token = authHeader.split(" ")[1];
+
+  if (token !== safeEnv.WEB_SERVER_SHARED_SECRET) {
+    return new Response("Forbidden", { status: 403 });
+  }
+
+  // If the token is valid, allow the request to proceed
+  return NextResponse.next({ request });
+}
 
 export async function middleware(request: NextRequest) {
-  return await updateSupabaseSession(request);
+  if (request.nextUrl.pathname.startsWith("/api/")) {
+    return validateApiKey(request);
+  } else {
+    return await updateSupabaseSession(request);
+  }
 }
 
 export const config = {

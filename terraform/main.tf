@@ -3,17 +3,17 @@ terraform {
 }
 
 variable "region" {
-  type = string
+  type        = string
   description = "The AWS region to use"
 }
 
 variable "project_name" {
-  type = string
+  type        = string
   description = "The name of this project. Will be used to prefix resources."
 }
 
 variable "test_email" {
-  type = string
+  type        = string
   description = "Email to use for testing. Set to use Amazon SES to send emails in debug"
 }
 
@@ -104,11 +104,22 @@ data "aws_caller_identity" "current" {}
 # Ideally this would be FIFO, but AWS doesn't allow
 # IoT Rules to publish to FIFO queues
 resource "aws_sqs_queue" "telemetry_queue" {
-  name                      = "${var.project_name}-telemetry-queue"
-  delay_seconds             = 0
-  max_message_size          = 262144
-  message_retention_seconds = 1209600  # Updated to maximum (14 days)
-  receive_wait_time_seconds = 10
+  name                       = "${var.project_name}-telemetry-queue"
+  delay_seconds              = 0
+  max_message_size           = 262144
+  message_retention_seconds  = 14 * 24 * 60 * 60
+  receive_wait_time_seconds  = 10
+  visibility_timeout_seconds = 30
+
+  redrive_policy = jsonencode({
+    deadLetterTargetArn = aws_sqs_queue.telemetry_dlq.arn
+    maxReceiveCount     = 1000
+  })
+}
+
+resource "aws_sqs_queue" "telemetry_dlq" {
+  name                      = "${var.project_name}-telemetry-dlq"
+  message_retention_seconds = 14 * 24 * 60 * 60
 }
 
 # IAM Role for IoT Rule
@@ -157,8 +168,8 @@ resource "aws_iot_topic_rule" "telemetry_rule" {
   sql_version = "2016-03-23"
 
   sqs {
-    queue_url = aws_sqs_queue.telemetry_queue.id
-    role_arn  = aws_iam_role.iot_rule_role.arn
+    queue_url  = aws_sqs_queue.telemetry_queue.id
+    role_arn   = aws_iam_role.iot_rule_role.arn
     use_base64 = false
   }
 }
@@ -176,7 +187,7 @@ output "aws_region" {
 output "device_provisioning_access_key" {
   value = {
     access_key_id = aws_iam_access_key.device_provisioning_key.id
-    secret_key = aws_iam_access_key.device_provisioning_key.secret
+    secret_key    = aws_iam_access_key.device_provisioning_key.secret
   }
   sensitive = true
 }
@@ -249,6 +260,108 @@ resource "aws_iam_user_policy" "ses_smtp_policy" {
   })
 }
 
+resource "random_password" "web_server_shared_secret" {
+  length  = 32
+  special = false
+}
+
+# Connection for API Destination
+resource "aws_cloudwatch_event_connection" "telemetry_http_connection" {
+  name               = "${var.project_name}-telemetry-http-connection"
+  authorization_type = "API_KEY"
+
+  auth_parameters {
+    api_key {
+      key   = "Authorization"
+      value = "Bearer ${random_password.web_server_shared_secret.result}"
+    }
+  }
+}
+
+# API Destination for HTTP endpoint
+resource "aws_cloudwatch_event_api_destination" "telemetry_http_destination" {
+  name                             = "${var.project_name}-telemetry-http-destination"
+  invocation_endpoint              = "https://f50c-2601-645-4000-9c0-8509-b775-3602-d102.ngrok-free.app/api/devices/telemetry"
+  http_method                      = "POST"
+  invocation_rate_limit_per_second = 300
+  connection_arn                   = aws_cloudwatch_event_connection.telemetry_http_connection.arn
+}
+
+# EventBridge Pipe
+resource "aws_pipes_pipe" "sqs_to_http" {
+  name     = "${var.project_name}-sqs-to-http-pipe"
+  role_arn = aws_iam_role.pipes_role.arn
+  source   = aws_sqs_queue.telemetry_queue.arn
+  target   = aws_cloudwatch_event_api_destination.telemetry_http_destination.arn
+
+  source_parameters {
+    sqs_queue_parameters {
+      batch_size = 1
+    }
+  }
+
+  log_configuration {
+    cloudwatch_logs_log_destination {
+      log_group_arn = aws_cloudwatch_log_group.pipe_log_group.arn
+    }
+    level = "INFO"
+  }
+}
+
+# IAM role for EventBridge Pipes
+resource "aws_iam_role" "pipes_role" {
+  name = "${var.project_name}-pipes-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "pipes.amazonaws.com"
+        }
+      }
+    ]
+  })
+}
+
+# IAM policy for Pipes to read from SQS and send to HTTP endpoint
+resource "aws_iam_role_policy" "pipes_policy" {
+  name = "${var.project_name}-pipes-policy"
+  role = aws_iam_role.pipes_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "sqs:ReceiveMessage",
+          "sqs:DeleteMessage",
+          "sqs:GetQueueAttributes"
+        ]
+        Resource = aws_sqs_queue.telemetry_queue.arn
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "events:InvokeApiDestination"
+        ]
+        Resource = aws_cloudwatch_event_api_destination.telemetry_http_destination.arn
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "logs:CreateLogStream",
+          "logs:PutLogEvents"
+        ]
+        Resource = "${aws_cloudwatch_log_group.pipe_log_group.arn}:*"
+      }
+    ]
+  })
+}
+
 output "smtp_host" {
   value = "email-smtp.${var.region}.amazonaws.com"
 }
@@ -277,4 +390,60 @@ output "web_server_user_access_key" {
 output "web_server_user_secret_key" {
   value     = aws_iam_access_key.web_server_user_key.secret
   sensitive = true
+}
+
+output "web_server_shared_secret" {
+  value     = random_password.web_server_shared_secret
+  sensitive = true
+}
+
+# Enable CloudWatch Logs for IoT Core
+resource "aws_iot_logging_options" "iot_logging" {
+  default_log_level = "INFO"
+  role_arn          = aws_iam_role.iot_logging_role.arn
+}
+
+resource "aws_iam_role" "iot_logging_role" {
+  name = "${var.project_name}-iot-logging-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Principal = {
+          Service = "iot.amazonaws.com"
+        }
+      }
+    ]
+  })
+}
+
+resource "aws_iam_role_policy" "iot_logging_policy" {
+  name = "${var.project_name}-iot-logging-policy"
+  role = aws_iam_role.iot_logging_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "logs:CreateLogGroup",
+          "logs:CreateLogStream",
+          "logs:PutLogEvents",
+          "logs:PutMetricFilter",
+          "logs:PutRetentionPolicy"
+        ]
+        Resource = "arn:aws:logs:*:*:*"
+      }
+    ]
+  })
+}
+
+# Enable logging for EventBridge Pipe
+resource "aws_cloudwatch_log_group" "pipe_log_group" {
+  name              = "/aws/pipes/${var.project_name}-sqs-to-http-pipe"
+  retention_in_days = 14
 }

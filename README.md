@@ -136,4 +136,5 @@ TODO
 - Fault tolerance
 - Clock skew
 - Costs
-- Scaling concerns (e.g. lambda concurrenc, lambda batch sizes, SQS queue sizes)
+- Scaling concerns (e.g. lambda concurrency, lambda batch sizes, SQS queue sizes)
+  - EventBridge retry duration limits (look at deadletter queue)

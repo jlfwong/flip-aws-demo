@@ -78,7 +78,8 @@ See comments in `safe-env.ts` for where to retrieve these.
 ## Configure Flip webhook URL
 
 In order for Flip to be able to send commands to your server, you need to
-configure the webhook URL through Flip's interface.
+configure the webhook URL through Flip's interface. For testing locally,
+use [ngrok](https://ngrok.com/).
 
 # Workflows
 

@@ -6,7 +6,7 @@ interface EnrollmentFormField {
   type: string;
 }
 
-interface Program {
+export interface FlipProgram {
   id: string;
   name: string;
   description: string;
@@ -44,7 +44,7 @@ interface Enrollment {
 }
 
 interface CommissionResponse {
-  programs: Program[];
+  programs: FlipProgram[];
   enrollment: Enrollment;
 }
 
@@ -134,7 +134,12 @@ class FlipApiRequester {
       Authorization: `Bearer ${this.authToken}`,
     });
 
-    return await fetch(`${this.baseUrl}${endpoint}`, {
+    const url = `${this.baseUrl}${endpoint}`;
+
+    console.log(`Fetching ${url}`);
+    console.log(`Authorization: ${headers.get("Authorization")}`);
+
+    return await fetch(url, {
       method,
       headers,
       body: body ? JSON.stringify(body) : undefined,
@@ -251,7 +256,35 @@ export class FlipSiteApiClient {
       throw new Error(`HTTP error! status: ${response.status}. Body: ${body}`);
     }
 
-    return response.json() as any as Device;
+    return response.json() as Promise<Device>;
+  }
+
+  async getSite(): Promise<Site> {
+    const response = await this.req.GET(`/v1/site/${this.siteId}`);
+
+    if (!response.ok) {
+      const body = await response.text();
+      throw new Error(`HTTP error! status: ${response.status}. Body: ${body}`);
+    }
+
+    return response.json() as Promise<Site>;
+  }
+
+  async getPrograms(): Promise<FlipProgram[]> {
+    // TODO(jlfwong): stop hard-coding this, and force zip code to be specified
+    //
+    // "On sandbox, use 88800, 88801 or 88802 to return results."
+    // https://docs.flip.energy/api-6038147
+    const response = await this.req.GET(
+      `/v1/site/${this.siteId}/programs?zip_code=88801&device_type=BATTERY`
+    );
+
+    if (!response.ok) {
+      const body = await response.text();
+      throw new Error(`HTTP error! status: ${response.status}. Body: ${body}`);
+    }
+
+    return response.json() as Promise<FlipProgram[]>;
   }
 
   static siteIdForThingName(thingName: string): string {

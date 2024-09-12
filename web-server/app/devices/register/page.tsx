@@ -1,9 +1,5 @@
 import { AWSThings } from "../../../lib/aws-things";
-import {
-  flipAdminApiClient,
-  FlipAdminApiClient,
-  FlipSiteApiClient,
-} from "../../../lib/flip-api";
+import { flipAdminApiClient, FlipSiteApiClient } from "../../../lib/flip-api";
 import { SupabaseDevices } from "../../../lib/supabase-devices";
 import { createSupabaseServerClient } from "../../../lib/supabase-server-client";
 import { registerDevice } from "./actions";

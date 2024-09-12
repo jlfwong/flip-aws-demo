@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server";
 import {
   flipAdminApiClient,
-  FlipSiteApiClient,
   FlipTelemetryPayload,
 } from "../../../../lib/flip-api";
 import { createSupabaseServiceRoleClient } from "../../../../lib/supabase-service-client";
@@ -49,7 +48,9 @@ export async function POST(request: Request) {
     }
     const awsThingName = awsThingNameMatch[1];
 
-    const { data, error } = await createSupabaseServiceRoleClient()
+    const supabase = createSupabaseServiceRoleClient();
+
+    const { data, error } = await supabase
       .from("devices")
       .select("flip_device_id")
       .eq("aws_thing_name", awsThingName)
@@ -89,6 +90,27 @@ export async function POST(request: Request) {
     };
 
     await flipAdminApiClient.logBatteryTelemetry(telemetry);
+
+    // Fetch unacked commands for the device from Supabase
+    const { data: unackedCommands, error: fetchError } = await supabase
+      .from("flip_commands")
+      .select("*")
+      .eq("flip_device_id", flipDeviceId)
+      .is("device_acked_at", null)
+      .order("created_at", { ascending: true });
+
+    if (fetchError) {
+      console.error("Error fetching unacked commands:", fetchError);
+      throw new Error(`Error fetching unacked commands: ${fetchError.message}`);
+    }
+
+    if (unackedCommands && unackedCommands.length > 0) {
+      console.log(
+        `Found ${unackedCommands.length} unacked commands for device ${flipDeviceId}`
+      );
+    } else {
+      console.log(`No unacked commands found for device ${flipDeviceId}`);
+    }
 
     // Return a 200 response
     return NextResponse.json(

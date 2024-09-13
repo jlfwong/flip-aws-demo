@@ -19,6 +19,24 @@ type EnrollmentWebhook = {
   };
 };
 
+type BatteryCommand = {
+  status: string;
+  device_status: "FAILED" | "OK" | "PENDING";
+  mode:
+    | "BACKUP"
+    | "CHARGE"
+    | "DISCHARGE"
+    | "SAVINGS"
+    | "SELF_CONSUMPTION"
+    | "STANDBY";
+  power_mode: "FOLLOW_LOAD" | "SETPOINT" | null;
+  setpoint_w: number | null;
+  enable_grid_import: boolean | null;
+  enable_grid_export: boolean | null;
+  backup_reserve_percentage: number | null;
+  maximum_charge_percentage: number | null;
+};
+
 type CommandWebhook = {
   event_type:
     | "command.created"
@@ -33,10 +51,7 @@ type CommandWebhook = {
     ends_at: string;
     duration_s: number | null;
     is_preparatory_action: boolean;
-    battery_commands: {
-      status: string;
-      device_status: "FAILED" | "OK" | "PENDING";
-    }[];
+    battery_commands: BatteryCommand[];
     created_at: string;
     updated_at: string;
   };
@@ -85,8 +100,8 @@ export async function POST(request: Request) {
       case "command.started": {
         const supabase = createSupabaseServiceRoleClient();
 
-        // If there's an existing command with this ID, this will overwrite the payload
-        // and clear the "device_acked_at" column
+        // If there's an existing command with this ID, this will overwrite the payload,
+        // including the created_at, and clear the "device_acked_at" column
         const { data, error } = await supabase.from("flip_commands").upsert(
           {
             id: payload.event_object.id,

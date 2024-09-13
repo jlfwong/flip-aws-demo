@@ -21,7 +21,7 @@ async function publishUnackedCommands(
   flipDeviceId: string,
   awsThingName: string
 ) {
-  if (commands.length < 0) {
+  if (commands.length == 0) {
     return;
   }
 
@@ -54,6 +54,7 @@ interface TelemetryPayload {
 
 interface TelemetryBody {
   mqtt_topic: string;
+  last_command_acked: string;
   telemetry: {
     last_mode: string;
     battery_last_power_charge_w: number;
@@ -131,7 +132,28 @@ export async function POST(request: Request) {
 
     await flipAdminApiClient.logBatteryTelemetry(telemetry);
 
-    // Fetch unacked commands for the device from Supabase
+    // Mark commands as acked
+    if (body.last_command_acked != null) {
+      const { error: updateError } = await supabase
+        .from("flip_commands")
+        .update({ device_acked_at: new Date().toISOString() })
+        .eq("flip_device_id", flipDeviceId)
+        .lte("created_at", body.last_command_acked)
+        .is("device_acked_at", null);
+
+      // TODO(jlfwong): Patch the command on Flip to indicate that the command
+      // reached the device.
+
+      if (updateError) {
+        console.error("Error updating acked commands:", updateError);
+      } else {
+        console.log(
+          `Updated acked commands for device ${flipDeviceId} up to ${body.last_command_acked}`
+        );
+      }
+    }
+
+    // Fetch unacked commands for the device
     const { data: unackedCommands, error: fetchError } = await supabase
       .from("flip_commands")
       .select("*")

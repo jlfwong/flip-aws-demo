@@ -3,7 +3,10 @@ import { updateSupabaseSession } from "./lib/supabase-middleware";
 import safeEnv from "./lib/safe-env";
 
 function validateApiKey(request: NextRequest) {
-  const authHeader = request.headers.get("Authorization");
+  const authHeader =
+    request.headers.get("Authorization") ??
+    // This header is non-standard, but is current what Flip uses
+    request.headers.get("Authentication");
 
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return new Response("Unauthorized", { status: 401 });
@@ -12,6 +15,7 @@ function validateApiKey(request: NextRequest) {
   const token = authHeader.split(" ")[1];
 
   if (token !== safeEnv.WEB_SERVER_SHARED_SECRET) {
+    console.log(`Received invalid auth token: ${token}`);
     return new Response("Forbidden", { status: 403 });
   }
 

@@ -222,7 +222,8 @@ resource "aws_iam_user_policy" "web_server_user_policy" {
         Action = [
           "iot:DescribeThing",
           "iot:ListThingPrincipals",
-          "iot:DescribeCertificate"
+          "iot:DescribeCertificate",
+          "iot:Publish"
         ]
         Resource = "*"
       }

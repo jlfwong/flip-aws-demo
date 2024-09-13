@@ -5,6 +5,46 @@ import {
 } from "../../../../lib/flip-api";
 import { createSupabaseServiceRoleClient } from "../../../../lib/supabase-service-client";
 
+import {
+  IoTDataPlaneClient,
+  PublishCommand,
+} from "@aws-sdk/client-iot-data-plane";
+import { Tables } from "../../../../lib/supabase-types";
+
+// Create IoT Data Plane client
+const iotClient = new IoTDataPlaneClient({
+  region: process.env.AWS_REGION,
+});
+
+async function publishUnackedCommands(
+  commands: Tables<"flip_commands">[],
+  flipDeviceId: string,
+  awsThingName: string
+) {
+  if (commands.length < 0) {
+    return;
+  }
+
+  console.log(
+    `Found ${commands.length} unacked commands for device ${flipDeviceId}`
+  );
+
+  // Publish unacked commands to MQTT
+  const publishCommand = new PublishCommand({
+    topic: `devices/${awsThingName}/commands`,
+    payload: JSON.stringify({
+      commands,
+    }),
+    qos: 1,
+  });
+  try {
+    await iotClient.send(publishCommand);
+    console.log(`Published command to ${publishCommand.input.topic}`);
+  } catch (error) {
+    console.error(`Error publishing command to IoT Core:`, error);
+  }
+}
+
 interface TelemetryPayload {
   body: string;
   attributes: {
@@ -104,13 +144,7 @@ export async function POST(request: Request) {
       throw new Error(`Error fetching unacked commands: ${fetchError.message}`);
     }
 
-    if (unackedCommands && unackedCommands.length > 0) {
-      console.log(
-        `Found ${unackedCommands.length} unacked commands for device ${flipDeviceId}`
-      );
-    } else {
-      console.log(`No unacked commands found for device ${flipDeviceId}`);
-    }
+    await publishUnackedCommands(unackedCommands, flipDeviceId, awsThingName);
 
     // Return a 200 response
     return NextResponse.json(

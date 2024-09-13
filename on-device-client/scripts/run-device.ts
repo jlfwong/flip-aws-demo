@@ -11,11 +11,22 @@ async function main() {
 
   await client.connect();
 
+  // Subscribe to the commands channel
+  const commandsTopic = `devices/${client.deviceInfo.thingName}/commands`;
+  await client.subscribe(commandsTopic, (topic, message) => {
+    try {
+      const parsed = JSON.parse(message);
+      console.log(`Received message on ${topic}:`, parsed);
+    } catch (error) {
+      console.log(`Error in subscribe callback: ${error}`);
+    }
+  });
+
   while (true) {
     try {
-      const topic = `devices/${client.deviceInfo.thingName}/telemetry`;
+      const telemetryTopic = `devices/${client.deviceInfo.thingName}/telemetry`;
       await client.publish(
-        topic,
+        telemetryTopic,
 
         // See https://docs.flip.energy/api-6088548
         JSON.stringify({

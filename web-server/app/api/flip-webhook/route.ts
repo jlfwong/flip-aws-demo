@@ -91,7 +91,7 @@ export async function POST(request: Request) {
           {
             id: payload.event_object.id,
             flip_device_id: payload.event_object.device_id,
-            event_payload: payload,
+            command_json: payload.event_object,
             created_at: new Date().toISOString(),
             device_acked_at: null,
           },

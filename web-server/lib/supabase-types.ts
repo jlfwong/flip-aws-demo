@@ -71,23 +71,23 @@ export type Database = {
       }
       flip_commands: {
         Row: {
+          command_json: Json
           created_at: string
           device_acked_at: string | null
-          event_payload: Json
           flip_device_id: string
           id: string
         }
         Insert: {
+          command_json: Json
           created_at?: string
           device_acked_at?: string | null
-          event_payload: Json
           flip_device_id: string
           id: string
         }
         Update: {
+          command_json?: Json
           created_at?: string
           device_acked_at?: string | null
-          event_payload?: Json
           flip_device_id?: string
           id?: string
         }

@@ -28,7 +28,7 @@ export class AWSIoTClient {
   }
 
   public privateKeyPath(): string {
-    return path.join(this.artifactsPath, "private-key.pem")
+    return path.join(this.artifactsPath, "private-key.pem");
   }
 
   async connect(): Promise<void> {
@@ -83,7 +83,7 @@ export class AWSIoTClient {
         topic,
         mqtt.QoS.AtLeastOnce,
         (topic, payload) => {
-          const message = payload.toString();
+          const message = new TextDecoder("utf-8").decode(payload);
           console.log(`Received on ${topic}: ${message}`);
           callback(topic, message);
         }

@@ -117,8 +117,6 @@ export async function POST(request: Request) {
           console.error("Error inserting command into Supabase:", error);
           throw error;
         }
-
-        console.log("Command inserted successfully:", data);
         break;
       }
 

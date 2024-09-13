@@ -145,6 +145,10 @@ class FlipApiRequester {
     return this.makeRequest(endpoint, "POST", body);
   }
 
+  async PATCH(endpoint: string, body: any): Promise<Response> {
+    return this.makeRequest(endpoint, "PATCH", body);
+  }
+
   async GET(endpoint: string): Promise<Response> {
     return this.makeRequest(endpoint, "GET");
   }
@@ -168,7 +172,6 @@ export class FlipAdminApiClient {
   }
 
   async logBatteryTelemetry(payload: FlipTelemetryPayload): Promise<void> {
-    console.log("Sending", payload);
     const response = await this.req.POST("/v1/telemetry/BATTERY", payload);
 
     if (!response.ok) {
@@ -206,6 +209,22 @@ export class FlipAdminApiClient {
     const token = await this.getSiteToken(siteId);
     if (!token) return null;
     return new FlipSiteApiClient(this.baseUrl, siteId, token.site_access_token);
+  }
+
+  async updateCommandStatus(
+    commandId: string,
+    status: "OK" | "FAILED"
+  ): Promise<void> {
+    const response = await this.req.PATCH(`/v1/command/${commandId}`, {
+      device_status: status,
+    });
+
+    if (!response.ok) {
+      const body = await response.text();
+      throw new Error(`HTTP error! status: ${response.status}. Body: ${body}`);
+    }
+
+    // This API does return data, but we'll ignore it since we don't care.
   }
 }
 

@@ -1,8 +1,7 @@
 import { createSupabaseServerClient } from "../../../lib/supabase-server-client";
 import { flipAdminApiClient } from "../../../lib/flip-api";
-import { EnrollmentList } from "./EnrollmentList";
-import { ProgramList } from "./ProgramList";
 import { UpdateSiteForm } from "./UpdateSiteForm";
+import { ProgramEnrollmentList } from "./ProgramEnrollmentList";
 
 export default async function DevicePage({
   params,
@@ -32,7 +31,7 @@ export default async function DevicePage({
   const programs = await siteClient.getPrograms();
 
   return (
-    <div>
+    <main>
       <h1>Device: {params["aws-thing-name"]}</h1>
       <p>Flip Device ID: {device.flip_device_id}</p>
       <p>Flip Site ID: {device.flip_site_id}</p>
@@ -40,19 +39,13 @@ export default async function DevicePage({
       <h2>Site Information</h2>
       <UpdateSiteForm initialSite={site} siteId={device.flip_site_id} />
 
-      <h2>Enrollments</h2>
-      <EnrollmentList
+      <h2>Programs</h2>
+      <ProgramEnrollmentList
+        programs={programs}
         enrollments={enrollments}
         siteId={device.flip_site_id}
         deviceId={device.flip_device_id}
       />
-
-      <h2>Available Programs</h2>
-      <ProgramList
-        programs={programs}
-        siteId={device.flip_site_id}
-        deviceId={device.flip_device_id}
-      />
-    </div>
+    </main>
   );
 }

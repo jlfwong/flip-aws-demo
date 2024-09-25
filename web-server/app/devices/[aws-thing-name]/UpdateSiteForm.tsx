@@ -38,7 +38,7 @@ export function UpdateSiteForm({
           type="text"
           id="first_name"
           name="first_name"
-          value={site.first_name}
+          value={site.first_name || ""}
           onChange={handleInputChange}
         />
       </div>
@@ -48,7 +48,7 @@ export function UpdateSiteForm({
           type="text"
           id="last_name"
           name="last_name"
-          value={site.last_name}
+          value={site.last_name || ""}
           onChange={handleInputChange}
         />
       </div>
@@ -58,7 +58,7 @@ export function UpdateSiteForm({
           type="email"
           id="email"
           name="email"
-          value={site.email}
+          value={site.email || ""}
           onChange={handleInputChange}
         />
       </div>
@@ -68,7 +68,7 @@ export function UpdateSiteForm({
           type="text"
           id="state_code"
           name="state_code"
-          value={site.state_code}
+          value={site.state_code || ""}
           onChange={handleInputChange}
         />
       </div>
@@ -78,7 +78,7 @@ export function UpdateSiteForm({
           type="text"
           id="city"
           name="city"
-          value={site.city}
+          value={site.city || ""}
           onChange={handleInputChange}
         />
       </div>
@@ -88,7 +88,7 @@ export function UpdateSiteForm({
           type="text"
           id="zip_code"
           name="zip_code"
-          value={site.zip_code}
+          value={site.zip_code || ""}
           onChange={handleInputChange}
         />
       </div>
@@ -98,7 +98,7 @@ export function UpdateSiteForm({
           type="text"
           id="street_address"
           name="street_address"
-          value={site.street_address}
+          value={site.street_address || ""}
           onChange={handleInputChange}
         />
       </div>
@@ -108,7 +108,7 @@ export function UpdateSiteForm({
           type="text"
           id="street_address2"
           name="street_address2"
-          value={site.street_address2}
+          value={site.street_address2 || ""}
           onChange={handleInputChange}
         />
       </div>
@@ -118,7 +118,7 @@ export function UpdateSiteForm({
           type="text"
           id="service_account_id"
           name="service_account_id"
-          value={site.service_account_id}
+          value={site.service_account_id || ""}
           onChange={handleInputChange}
         />
       </div>

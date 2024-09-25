@@ -33,14 +33,14 @@ export interface FlipEnrollment {
   device_ids: string[];
   site_id: string;
   program_id: string;
-  enroll_method: string;
-  status: string;
-  status_reason: string;
-  enrolled_at: string;
-  unenrolled_at: string;
+  enroll_method: "AUTO_ENROLL" | "USER_ACTION";
+  status: "ACTIVE" | "NEEDS_ACTION" | "PENDING" | "REJECTED" | "UNENROLLED";
+  status_reason: string | null;
+  enrolled_at: string | null;
+  unenrolled_at: string | null;
   program_specific_attributes: ProgramSpecificAttribute[];
-  has_agreed_to_terms_and_conditions: boolean;
-  terms_and_conditions_version: string;
+  has_agreed_to_terms_and_conditions: boolean | null;
+  terms_and_conditions_version: string | null;
 }
 
 interface CommissionResponse {

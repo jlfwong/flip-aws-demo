@@ -58,6 +58,7 @@ export interface Site {
   street_address: string;
   street_address2?: string;
   service_account_id: string;
+  tariff_id?: string;
 }
 
 interface DeviceAttributes {

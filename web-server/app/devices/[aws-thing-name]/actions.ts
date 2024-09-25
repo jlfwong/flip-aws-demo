@@ -16,7 +16,14 @@ export async function updateSite(
     throw new Error("Site not found");
   }
 
-  return await siteClient.updateSite(siteUpdate);
+  // Remove tariff_id if it's null or empty
+  const updatedSiteData = { ...siteUpdate };
+  if (!updatedSiteData.tariff_id) {
+    delete updatedSiteData.tariff_id;
+  }
+
+  const updatedSite = await siteClient.updateSite(updatedSiteData);
+  return updatedSite;
 }
 
 export async function deleteEnrollment(

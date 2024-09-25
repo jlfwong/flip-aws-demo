@@ -1,12 +1,8 @@
 import { createSupabaseServerClient } from "../../../lib/supabase-server-client";
-import {
-  flipAdminApiClient,
-  FlipProgram,
-  FlipEnrollment,
-} from "../../../lib/flip-api";
-import { UpdateSiteForm } from "./UpdateSiteForm";
+import { flipAdminApiClient } from "../../../lib/flip-api";
 import { EnrollmentList } from "./EnrollmentList";
 import { ProgramList } from "./ProgramList";
+import { UpdateSiteForm } from "./UpdateSiteForm";
 
 export default async function DevicePage({
   params,

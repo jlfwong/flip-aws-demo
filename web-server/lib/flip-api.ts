@@ -6,7 +6,7 @@ interface EnrollmentFormField {
   type: string;
 }
 
-interface Program {
+export interface FlipProgram {
   id: string;
   name: string;
   description: string;
@@ -28,28 +28,27 @@ interface ProgramSpecificAttribute {
   value: string;
 }
 
-interface Enrollment {
+export interface FlipEnrollment {
   id: string;
   device_ids: string[];
   site_id: string;
   program_id: string;
-  enroll_method: string;
-  status: string;
-  status_reason: string;
-  enrolled_at: string;
-  unenrolled_at: string;
+  enroll_method: "AUTO_ENROLL" | "USER_ACTION";
+  status: "ACTIVE" | "NEEDS_ACTION" | "PENDING" | "REJECTED" | "UNENROLLED";
+  status_reason: string | null;
+  enrolled_at: string | null;
+  unenrolled_at: string | null;
   program_specific_attributes: ProgramSpecificAttribute[];
-  has_agreed_to_terms_and_conditions: boolean;
-  terms_and_conditions_version: string;
+  has_agreed_to_terms_and_conditions: boolean | null;
+  terms_and_conditions_version: string | null;
 }
 
 interface CommissionResponse {
-  programs: Program[];
-  enrollment: Enrollment;
+  programs: FlipProgram[];
+  enrollment: FlipEnrollment;
 }
 
-interface Site {
-  id: string;
+export interface Site {
   first_name: string;
   last_name: string;
   email: string;
@@ -57,7 +56,9 @@ interface Site {
   city: string;
   zip_code: string;
   street_address: string;
-  street_address2: string;
+  street_address2?: string;
+  service_account_id: string;
+  tariff_id?: string;
 }
 
 interface DeviceAttributes {
@@ -121,6 +122,15 @@ export interface CommissionPayload {
   can_auto_enroll: boolean;
 }
 
+export interface CreateEnrollmentPayload {
+  device_ids: string[];
+  program_id: string;
+  enroll_method: "AUTO_ENROLL" | "USER_ACTION";
+  has_agreed_to_terms_and_conditions: boolean;
+  terms_and_conditions_version?: string;
+  program_specific_attributes?: { name: string; value: string }[];
+}
+
 class FlipApiRequester {
   constructor(private baseUrl: string, private authToken: string) {}
 
@@ -134,7 +144,12 @@ class FlipApiRequester {
       Authorization: `Bearer ${this.authToken}`,
     });
 
-    return await fetch(`${this.baseUrl}${endpoint}`, {
+    const url = `${this.baseUrl}${endpoint}`;
+
+    console.log(`Fetching ${url}`);
+    console.log(`Authorization: ${headers.get("Authorization")}`);
+
+    return await fetch(url, {
       method,
       headers,
       body: body ? JSON.stringify(body) : undefined,
@@ -151,6 +166,10 @@ class FlipApiRequester {
 
   async GET(endpoint: string): Promise<Response> {
     return this.makeRequest(endpoint, "GET");
+  }
+
+  async DELETE(endpoint: string): Promise<Response> {
+    return this.makeRequest(endpoint, "DELETE");
   }
 }
 
@@ -251,7 +270,33 @@ export class FlipSiteApiClient {
       throw new Error(`HTTP error! status: ${response.status}. Body: ${body}`);
     }
 
-    return response.json() as any as Device;
+    return response.json() as Promise<Device>;
+  }
+
+  async getSite(): Promise<Site> {
+    const response = await this.req.GET(`/v1/site/${this.siteId}`);
+
+    if (!response.ok) {
+      const body = await response.text();
+      throw new Error(`HTTP error! status: ${response.status}. Body: ${body}`);
+    }
+
+    return response.json() as Promise<Site>;
+  }
+
+  async getPrograms(zipCode: string): Promise<FlipProgram[]> {
+    const response = await this.req.GET(
+      `/v1/site/${this.siteId}/programs?zip_code=${encodeURIComponent(
+        zipCode
+      )}&device_type=BATTERY`
+    );
+
+    if (!response.ok) {
+      const body = await response.text();
+      throw new Error(`HTTP error! status: ${response.status}. Body: ${body}`);
+    }
+
+    return response.json() as Promise<FlipProgram[]>;
   }
 
   static siteIdForThingName(thingName: string): string {
@@ -260,6 +305,60 @@ export class FlipSiteApiClient {
 
   static deviceIdForThingName(thingName: string): string {
     return `device::${thingName}`;
+  }
+
+  async createEnrollment(
+    payload: CreateEnrollmentPayload
+  ): Promise<FlipEnrollment> {
+    const response = await this.req.POST(
+      `/v1/site/${this.siteId}/enrollments`,
+      payload
+    );
+
+    if (!response.ok) {
+      const body = await response.text();
+      throw new Error(`HTTP error! status: ${response.status}. Body: ${body}`);
+    }
+
+    return response.json() as Promise<FlipEnrollment>;
+  }
+
+  async deleteEnrollment(enrollmentId: string): Promise<void> {
+    const response = await this.req.DELETE(
+      `/v1/site/${this.siteId}/enrollment/${enrollmentId}`
+    );
+
+    if (!response.ok) {
+      const body = await response.text();
+      throw new Error(`HTTP error! status: ${response.status}. Body: ${body}`);
+    }
+
+    // The API doesn't return any data on successful deletion
+  }
+
+  async getEnrollments(): Promise<FlipEnrollment[]> {
+    const response = await this.req.GET(`/v1/site/${this.siteId}/enrollments`);
+
+    if (!response.ok) {
+      const body = await response.text();
+      throw new Error(`HTTP error! status: ${response.status}. Body: ${body}`);
+    }
+
+    return response.json() as Promise<FlipEnrollment[]>;
+  }
+
+  async updateSite(siteUpdate: Partial<Site>): Promise<Site> {
+    const response = await this.req.PATCH(
+      `/v1/site/${this.siteId}`,
+      siteUpdate
+    );
+
+    if (!response.ok) {
+      const body = await response.text();
+      throw new Error(`HTTP error! status: ${response.status}. Body: ${body}`);
+    }
+
+    return response.json() as Promise<Site>;
   }
 }
 

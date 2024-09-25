@@ -1,9 +1,5 @@
 import { AWSThings } from "../../../lib/aws-things";
-import {
-  flipAdminApiClient,
-  FlipAdminApiClient,
-  FlipSiteApiClient,
-} from "../../../lib/flip-api";
+import { flipAdminApiClient, FlipSiteApiClient } from "../../../lib/flip-api";
 import { SupabaseDevices } from "../../../lib/supabase-devices";
 import { createSupabaseServerClient } from "../../../lib/supabase-server-client";
 import { registerDevice } from "./actions";
@@ -340,6 +336,16 @@ export function DeviceRegistrationForm({
           required
           className="w-full p-2 border rounded"
           defaultValue="20"
+        />
+      </div>
+
+      <div>
+        <label htmlFor="serviceAccountId">Service Account ID:</label>
+        <input
+          type="text"
+          id="serviceAccountId"
+          name="serviceAccountId"
+          required
         />
       </div>
 

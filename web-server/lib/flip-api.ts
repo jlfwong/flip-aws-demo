@@ -48,8 +48,7 @@ interface CommissionResponse {
   enrollment: FlipEnrollment;
 }
 
-interface Site {
-  id: string;
+export interface Site {
   first_name: string;
   last_name: string;
   email: string;
@@ -57,7 +56,7 @@ interface Site {
   city: string;
   zip_code: string;
   street_address: string;
-  street_address2: string;
+  street_address2?: string;
   service_account_id: string;
 }
 

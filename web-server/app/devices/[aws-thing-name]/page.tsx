@@ -1,7 +1,11 @@
 import Link from "next/link";
 import { createSupabaseServerClient } from "../../../lib/supabase-server-client";
 import { notFound } from "next/navigation";
-import { flipAdminApiClient, FlipProgram } from "../../../lib/flip-api";
+import {
+  flipAdminApiClient,
+  FlipProgram,
+  FlipEnrollment,
+} from "../../../lib/flip-api";
 
 export default async function DevicePage({
   params,
@@ -29,7 +33,9 @@ export default async function DevicePage({
   }
 
   let programs: FlipProgram[] = [];
+  let enrollments: FlipEnrollment[] = [];
   programs = await flipSiteClient.getPrograms();
+  enrollments = await flipSiteClient.getEnrollments();
   const site = await flipSiteClient.getSite();
 
   return (
@@ -66,6 +72,20 @@ export default async function DevicePage({
         </ul>
       ) : (
         <p>No associated programs found.</p>
+      )}
+      <h2 className="text-xl font-bold mt-4 mb-2">Enrollments</h2>
+      {enrollments.length > 0 ? (
+        <ul>
+          {enrollments.map((enrollment) => (
+            <li key={enrollment.id}>
+              <strong>Program ID:</strong> {enrollment.program_id},{" "}
+              <strong>Status:</strong> {enrollment.status},{" "}
+              <strong>Enrolled At:</strong> {enrollment.enrolled_at}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p>No enrollments found.</p>
       )}
       <Link href="/">Home</Link>
     </div>

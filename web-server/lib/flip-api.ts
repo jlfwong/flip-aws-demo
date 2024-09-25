@@ -28,7 +28,7 @@ interface ProgramSpecificAttribute {
   value: string;
 }
 
-interface Enrollment {
+export interface FlipEnrollment {
   id: string;
   device_ids: string[];
   site_id: string;
@@ -45,7 +45,7 @@ interface Enrollment {
 
 interface CommissionResponse {
   programs: FlipProgram[];
-  enrollment: Enrollment;
+  enrollment: FlipEnrollment;
 }
 
 interface Site {
@@ -121,6 +121,15 @@ export interface CommissionPayload {
   can_auto_enroll: boolean;
 }
 
+export interface CreateEnrollmentPayload {
+  device_ids: string[];
+  program_id: string;
+  enroll_method: "AUTO_ENROLL" | "USER_ACTION";
+  has_agreed_to_terms_and_conditions: boolean;
+  terms_and_conditions_version?: string;
+  program_specific_attributes?: { name: string; value: string }[];
+}
+
 class FlipApiRequester {
   constructor(private baseUrl: string, private authToken: string) {}
 
@@ -156,6 +165,10 @@ class FlipApiRequester {
 
   async GET(endpoint: string): Promise<Response> {
     return this.makeRequest(endpoint, "GET");
+  }
+
+  async DELETE(endpoint: string): Promise<Response> {
+    return this.makeRequest(endpoint, "DELETE");
   }
 }
 
@@ -293,6 +306,46 @@ export class FlipSiteApiClient {
 
   static deviceIdForThingName(thingName: string): string {
     return `device::${thingName}`;
+  }
+
+  async createEnrollment(
+    payload: CreateEnrollmentPayload
+  ): Promise<FlipEnrollment> {
+    const response = await this.req.POST(
+      `/v1/site/${this.siteId}/enrollments`,
+      payload
+    );
+
+    if (!response.ok) {
+      const body = await response.text();
+      throw new Error(`HTTP error! status: ${response.status}. Body: ${body}`);
+    }
+
+    return response.json() as Promise<FlipEnrollment>;
+  }
+
+  async deleteEnrollment(enrollmentId: string): Promise<void> {
+    const response = await this.req.DELETE(
+      `/v1/site/${this.siteId}/enrollment/${enrollmentId}`
+    );
+
+    if (!response.ok) {
+      const body = await response.text();
+      throw new Error(`HTTP error! status: ${response.status}. Body: ${body}`);
+    }
+
+    // The API doesn't return any data on successful deletion
+  }
+
+  async getEnrollments(): Promise<FlipEnrollment[]> {
+    const response = await this.req.GET(`/v1/site/${this.siteId}/enrollments`);
+
+    if (!response.ok) {
+      const body = await response.text();
+      throw new Error(`HTTP error! status: ${response.status}. Body: ${body}`);
+    }
+
+    return response.json() as Promise<FlipEnrollment[]>;
   }
 }
 

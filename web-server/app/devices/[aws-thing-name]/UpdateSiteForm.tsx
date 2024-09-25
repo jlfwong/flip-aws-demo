@@ -11,35 +11,35 @@ export function UpdateSiteForm({
   initialSite: Site;
   siteId: string;
 }) {
-  const [site, setSite] = useState<Site>(initialSite);
+  const [isUpdating, setIsUpdating] = useState(false);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setSite((prevSite: Site) => ({ ...prevSite, [name]: value }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const onSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setIsUpdating(true);
+
+    const formData = new FormData(e.currentTarget);
+    const siteUpdate: Partial<Site> = Object.fromEntries(formData.entries());
+
     try {
-      const updatedSite = await updateSite(siteId, site);
-      setSite(updatedSite);
-      alert("Site information updated successfully!");
+      await updateSite(siteId, siteUpdate);
+      alert("Site updated successfully!");
     } catch (error) {
       console.error("Error updating site:", error);
-      alert("Failed to update site information. Please try again.");
+      alert("Failed to update site. Please try again.");
+    } finally {
+      setIsUpdating(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit}>
+    <form onSubmit={onSubmit}>
       <div>
         <label htmlFor="first_name">First Name:</label>
         <input
           type="text"
           id="first_name"
           name="first_name"
-          value={site.first_name || ""}
-          onChange={handleInputChange}
+          defaultValue={initialSite.first_name || ""}
         />
       </div>
       <div>
@@ -48,8 +48,7 @@ export function UpdateSiteForm({
           type="text"
           id="last_name"
           name="last_name"
-          value={site.last_name || ""}
-          onChange={handleInputChange}
+          defaultValue={initialSite.last_name || ""}
         />
       </div>
       <div>
@@ -58,8 +57,7 @@ export function UpdateSiteForm({
           type="email"
           id="email"
           name="email"
-          value={site.email || ""}
-          onChange={handleInputChange}
+          defaultValue={initialSite.email || ""}
         />
       </div>
       <div>
@@ -68,8 +66,7 @@ export function UpdateSiteForm({
           type="text"
           id="state_code"
           name="state_code"
-          value={site.state_code || ""}
-          onChange={handleInputChange}
+          defaultValue={initialSite.state_code || ""}
         />
       </div>
       <div>
@@ -78,8 +75,7 @@ export function UpdateSiteForm({
           type="text"
           id="city"
           name="city"
-          value={site.city || ""}
-          onChange={handleInputChange}
+          defaultValue={initialSite.city || ""}
         />
       </div>
       <div>
@@ -88,8 +84,7 @@ export function UpdateSiteForm({
           type="text"
           id="zip_code"
           name="zip_code"
-          value={site.zip_code || ""}
-          onChange={handleInputChange}
+          defaultValue={initialSite.zip_code || ""}
         />
       </div>
       <div>
@@ -98,8 +93,7 @@ export function UpdateSiteForm({
           type="text"
           id="street_address"
           name="street_address"
-          value={site.street_address || ""}
-          onChange={handleInputChange}
+          defaultValue={initialSite.street_address || ""}
         />
       </div>
       <div>
@@ -108,8 +102,7 @@ export function UpdateSiteForm({
           type="text"
           id="street_address2"
           name="street_address2"
-          value={site.street_address2 || ""}
-          onChange={handleInputChange}
+          defaultValue={initialSite.street_address2 || ""}
         />
       </div>
       <div>
@@ -118,11 +111,12 @@ export function UpdateSiteForm({
           type="text"
           id="service_account_id"
           name="service_account_id"
-          value={site.service_account_id || ""}
-          onChange={handleInputChange}
+          defaultValue={initialSite.service_account_id || ""}
         />
       </div>
-      <button type="submit">Update Site Information</button>
+      <button type="submit" disabled={isUpdating}>
+        {isUpdating ? "Updating..." : "Update Site Information"}
+      </button>
     </form>
   );
 }

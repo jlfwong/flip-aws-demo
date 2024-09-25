@@ -1,29 +1,19 @@
 "use server";
 
-import {
-  flipAdminApiClient,
-  Site,
-  FlipEnrollment,
-  CreateEnrollmentPayload,
-} from "../../../lib/flip-api";
+import { flipAdminApiClient, Site } from "../../../lib/flip-api";
+import { revalidatePath } from "next/cache";
 
 export async function updateSite(
   siteId: string,
   siteUpdate: Partial<Site>
-): Promise<Site> {
+): Promise<void> {
   const siteClient = await flipAdminApiClient.getSiteClient(siteId);
   if (!siteClient) {
     throw new Error("Site not found");
   }
 
-  // Remove tariff_id if it's null or empty
-  const updatedSiteData = { ...siteUpdate };
-  if (!updatedSiteData.tariff_id) {
-    delete updatedSiteData.tariff_id;
-  }
-
-  const updatedSite = await siteClient.updateSite(updatedSiteData);
-  return updatedSite;
+  await siteClient.updateSite(siteUpdate);
+  revalidatePath(`/devices/[aws-thing-name]`);
 }
 
 export async function deleteEnrollment(

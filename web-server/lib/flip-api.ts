@@ -58,6 +58,7 @@ interface Site {
   zip_code: string;
   street_address: string;
   street_address2: string;
+  service_account_id: string;
 }
 
 interface DeviceAttributes {

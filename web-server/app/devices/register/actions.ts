@@ -9,54 +9,6 @@ import {
 import safeEnv from "../../../lib/safe-env";
 import { createSupabaseServerClient } from "../../../lib/supabase-server-client";
 
-function createCommissionPayload(
-  formData: FormData,
-  flipSiteId: string,
-  flipDeviceId: string,
-  userEmail: string
-): CommissionPayload {
-  return {
-    site: {
-      id: flipSiteId,
-      first_name: formData.get("firstName") as string,
-      last_name: formData.get("lastName") as string,
-      email: userEmail,
-      state_code: formData.get("stateCode") as string,
-      city: formData.get("city") as string,
-      zip_code: formData.get("zipCode") as string,
-      street_address: formData.get("streetAddress") as string,
-      street_address2: formData.get("streetAddress2") as string,
-    },
-    devices: [
-      {
-        id: flipDeviceId,
-        manufacturer_name: formData.get("manufacturerName") as string,
-        product_name: formData.get("productName") as string,
-        type: "BATTERY",
-        serial_number: formData.get("serialNumber") as string,
-        attributes: {
-          battery_capacity_wh: parseInt(
-            formData.get("batteryCapacity") as string
-          ),
-          battery_power_input_w: parseInt(
-            formData.get("batteryPowerInput") as string
-          ),
-          battery_power_output_w: parseInt(
-            formData.get("batteryPowerOutput") as string
-          ),
-        },
-        configuration: {
-          reserve_percentage: parseInt(
-            formData.get("reservePercentage") as string
-          ),
-        },
-        install_date: new Date().toISOString(),
-      },
-    ],
-    can_auto_enroll: true,
-  };
-}
-
 export async function registerDevice(formData: FormData) {
   const supabase = createSupabaseServerClient();
   const {
@@ -97,12 +49,52 @@ export async function registerDevice(formData: FormData) {
   const flipSiteId = FlipSiteApiClient.siteIdForThingName(thingName);
   const flipDeviceId = FlipSiteApiClient.deviceIdForThingName(thingName);
 
-  const commissionPayload = createCommissionPayload(
-    formData,
-    flipSiteId,
-    flipDeviceId,
-    user.email!
-  );
+  const serviceAccountId = formData.get("serviceAccountId") as string;
+  if (!serviceAccountId) {
+    throw new Error("Service Account ID is required");
+  }
+
+  const commissionPayload: CommissionPayload = {
+    site: {
+      id: flipSiteId,
+      first_name: formData.get("firstName") as string,
+      last_name: formData.get("lastName") as string,
+      email: user.email!,
+      state_code: formData.get("stateCode") as string,
+      city: formData.get("city") as string,
+      zip_code: formData.get("zipCode") as string,
+      street_address: formData.get("streetAddress") as string,
+      street_address2: formData.get("streetAddress2") as string,
+      service_account_id: serviceAccountId,
+    },
+    devices: [
+      {
+        id: flipDeviceId,
+        manufacturer_name: formData.get("manufacturerName") as string,
+        product_name: formData.get("productName") as string,
+        type: "BATTERY",
+        serial_number: formData.get("serialNumber") as string,
+        attributes: {
+          battery_capacity_wh: parseInt(
+            formData.get("batteryCapacity") as string
+          ),
+          battery_power_input_w: parseInt(
+            formData.get("batteryPowerInput") as string
+          ),
+          battery_power_output_w: parseInt(
+            formData.get("batteryPowerOutput") as string
+          ),
+        },
+        configuration: {
+          reserve_percentage: parseInt(
+            formData.get("reservePercentage") as string
+          ),
+        },
+        install_date: new Date().toISOString(),
+      },
+    ],
+    can_auto_enroll: true,
+  };
 
   try {
     const result = await client.commission(commissionPayload);

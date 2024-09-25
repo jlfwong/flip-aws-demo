@@ -348,6 +348,20 @@ export class FlipSiteApiClient {
 
     return response.json() as Promise<FlipEnrollment[]>;
   }
+
+  async updateSite(siteUpdate: Partial<Site>): Promise<Site> {
+    const response = await this.req.PATCH(
+      `/v1/site/${this.siteId}`,
+      siteUpdate
+    );
+
+    if (!response.ok) {
+      const body = await response.text();
+      throw new Error(`HTTP error! status: ${response.status}. Body: ${body}`);
+    }
+
+    return response.json() as Promise<Site>;
+  }
 }
 
 export const flipAdminApiClient = new FlipAdminApiClient(

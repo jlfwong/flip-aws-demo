@@ -5,7 +5,49 @@ import {
   flipAdminApiClient,
   FlipProgram,
   FlipEnrollment,
+  CreateEnrollmentPayload,
 } from "../../../lib/flip-api";
+import { revalidatePath } from "next/cache";
+
+// Server action to create enrollment
+async function createEnrollment(formData: FormData) {
+  "use server";
+  const siteId = formData.get("siteId") as string;
+  const programId = formData.get("programId") as string;
+  const deviceId = formData.get("deviceId") as string;
+  const awsThingName = formData.get("awsThingName") as string;
+
+  const flipSiteClient = await flipAdminApiClient.getSiteClient(siteId);
+  if (!flipSiteClient) {
+    throw new Error("Failed to fetch site client");
+  }
+
+  const payload: CreateEnrollmentPayload = {
+    device_ids: [deviceId],
+    program_id: programId,
+    enroll_method: "USER_ACTION",
+    has_agreed_to_terms_and_conditions: true,
+  };
+
+  await flipSiteClient.createEnrollment(payload);
+  revalidatePath(`/devices/${awsThingName}`);
+}
+
+// Server action to delete enrollment
+async function deleteEnrollment(formData: FormData) {
+  "use server";
+  const siteId = formData.get("siteId") as string;
+  const enrollmentId = formData.get("enrollmentId") as string;
+  const awsThingName = formData.get("awsThingName") as string;
+
+  const flipSiteClient = await flipAdminApiClient.getSiteClient(siteId);
+  if (!flipSiteClient) {
+    throw new Error("Failed to fetch site client");
+  }
+
+  await flipSiteClient.deleteEnrollment(enrollmentId);
+  revalidatePath(`/devices/${awsThingName}`);
+}
 
 export default async function DevicePage({
   params,
@@ -81,13 +123,56 @@ export default async function DevicePage({
               <strong>Program ID:</strong> {enrollment.program_id},{" "}
               <strong>Status:</strong> {enrollment.status},{" "}
               <strong>Enrolled At:</strong> {enrollment.enrolled_at}
+              <form action={deleteEnrollment}>
+                <input
+                  type="hidden"
+                  name="siteId"
+                  value={device.flip_site_id}
+                />
+                <input
+                  type="hidden"
+                  name="enrollmentId"
+                  value={enrollment.id}
+                />
+                <input
+                  type="hidden"
+                  name="awsThingName"
+                  value={params["aws-thing-name"]}
+                />
+                <button type="submit" className="ml-2 text-red-500">
+                  Delete
+                </button>
+              </form>
             </li>
           ))}
         </ul>
       ) : (
         <p>No enrollments found.</p>
       )}
-      <Link href="/">Home</Link>
+      <h2 className="text-xl font-bold mt-4 mb-2">Create Enrollment</h2>
+      <form action={createEnrollment}>
+        <input type="hidden" name="siteId" value={device.flip_site_id} />
+        <input type="hidden" name="deviceId" value={device.flip_device_id} />
+        <input
+          type="hidden"
+          name="awsThingName"
+          value={params["aws-thing-name"]}
+        />
+        <select name="programId" required className="border p-2 mr-2">
+          <option value="">Select a program</option>
+          {programs.map((program) => (
+            <option key={program.id} value={program.id}>
+              {program.name}
+            </option>
+          ))}
+        </select>
+        <button type="submit" className="bg-blue-500 text-white p-2 rounded">
+          Create Enrollment
+        </button>
+      </form>
+      <Link href="/" className="block mt-4">
+        Home
+      </Link>
     </div>
   );
 }

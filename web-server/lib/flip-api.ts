@@ -284,13 +284,11 @@ export class FlipSiteApiClient {
     return response.json() as Promise<Site>;
   }
 
-  async getPrograms(): Promise<FlipProgram[]> {
-    // TODO(jlfwong): stop hard-coding this, and force zip code to be specified
-    //
-    // "On sandbox, use 88800, 88801 or 88802 to return results."
-    // https://docs.flip.energy/api-6038147
+  async getPrograms(zipCode: string): Promise<FlipProgram[]> {
     const response = await this.req.GET(
-      `/v1/site/${this.siteId}/programs?zip_code=88801&device_type=BATTERY`
+      `/v1/site/${this.siteId}/programs?zip_code=${encodeURIComponent(
+        zipCode
+      )}&device_type=BATTERY`
     );
 
     if (!response.ok) {

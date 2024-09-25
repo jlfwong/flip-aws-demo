@@ -27,8 +27,10 @@ export default async function DevicePage({
   }
 
   const site = await siteClient.getSite();
-  const enrollments = await siteClient.getEnrollments();
-  const programs = await siteClient.getPrograms();
+  const [enrollments, programs] = await Promise.all([
+    siteClient.getEnrollments(),
+    siteClient.getPrograms(site.zip_code),
+  ]);
 
   return (
     <main>

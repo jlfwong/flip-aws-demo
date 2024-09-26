@@ -3,7 +3,7 @@ import safeEnv from "./safe-env";
 interface EnrollmentFormField {
   name: string;
   label: string;
-  type: string;
+  type: "boolean" | "number" | "string";
 }
 
 export interface FlipProgram {

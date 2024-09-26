@@ -57,25 +57,24 @@ export async function createEnrollment(siteId: string, formData: FormData) {
   for (const field of program.enrollment_form) {
     if (field.name !== "programId" && field.name !== "deviceId") {
       const value = formData.get(field.name);
-      if (value !== null) {
-        let processedValue: string;
-        switch (field.type) {
-          case "boolean":
-            processedValue = value === "on" ? "true" : "false";
-            break;
-          case "number":
-            processedValue = parseFloat(value as string).toString();
-            break;
-          case "string":
-          default:
-            processedValue = value as string;
-            break;
-        }
-        programSpecificAttributes.push({
-          name: field.name,
-          value: processedValue,
-        });
+      let processedValue: string;
+      switch (field.type) {
+        case "boolean":
+          processedValue = value === null ? "false" : "true";
+          break;
+        case "number":
+          processedValue =
+            value !== null ? parseFloat(value as string).toString() : "0";
+          break;
+        case "string":
+        default:
+          processedValue = value !== null ? (value as string) : "";
+          break;
       }
+      programSpecificAttributes.push({
+        name: field.name,
+        value: processedValue,
+      });
     }
   }
 
@@ -84,6 +83,7 @@ export async function createEnrollment(siteId: string, formData: FormData) {
     program_id: programId,
     enroll_method: "USER_ACTION",
     has_agreed_to_terms_and_conditions: true,
+    terms_and_conditions_version: program.terms_and_conditions_version,
     program_specific_attributes: programSpecificAttributes,
   };
 

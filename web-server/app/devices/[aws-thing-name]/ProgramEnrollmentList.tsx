@@ -38,14 +38,26 @@ export function ProgramEnrollmentList({
                 {program.enrollment_form && (
                   <div>
                     <h4>Program Specific Attributes:</h4>
-                    {program.enrollment_form.map((field) => (
-                      <p key={field.name}>
-                        {field.label}:{" "}
-                        {enrollment.program_specific_attributes.find(
+                    {program.enrollment_form.map((field) => {
+                      const attribute =
+                        enrollment.program_specific_attributes.find(
                           (attr) => attr.name === field.name
-                        )?.value || ""}
-                      </p>
-                    ))}
+                        );
+                      let displayValue = "";
+                      if (attribute) {
+                        if (field.type === "boolean") {
+                          displayValue =
+                            attribute.value === "true" ? "Yes" : "No";
+                        } else {
+                          displayValue = attribute.value;
+                        }
+                      }
+                      return (
+                        <p key={field.name}>
+                          {field.label}: {displayValue}
+                        </p>
+                      );
+                    })}
                   </div>
                 )}
                 <form
@@ -71,7 +83,6 @@ export function ProgramEnrollmentList({
                             type="checkbox"
                             id={`${program.id}-${field.name}`}
                             name={field.name}
-                            required={true}
                           />
                         ) : field.type === "number" ? (
                           <input

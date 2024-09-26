@@ -127,7 +127,7 @@ export interface CreateEnrollmentPayload {
   program_id: string;
   enroll_method: "AUTO_ENROLL" | "USER_ACTION";
   has_agreed_to_terms_and_conditions: boolean;
-  terms_and_conditions_version?: string;
+  terms_and_conditions_version: string;
   program_specific_attributes?: { name: string; value: string }[];
 }
 

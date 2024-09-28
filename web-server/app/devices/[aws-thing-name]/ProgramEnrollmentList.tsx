@@ -1,8 +1,5 @@
-"use client";
-
 import { FlipEnrollment, FlipProgram } from "../../../lib/flip-api";
 import { deleteEnrollment, createEnrollment } from "./actions";
-import { useState } from "react";
 
 interface ProgramEnrollmentListProps {
   programs: FlipProgram[];
@@ -17,39 +14,8 @@ export function ProgramEnrollmentList({
   siteId,
   deviceId,
 }: ProgramEnrollmentListProps) {
-  const [localEnrollments, setLocalEnrollments] = useState(enrollments);
-
-  const handleUnenroll = async (enrollmentId: string) => {
-    try {
-      await deleteEnrollment(siteId, enrollmentId);
-      setLocalEnrollments(
-        localEnrollments.filter((e) => e.id !== enrollmentId)
-      );
-      alert("Successfully unenrolled from the program.");
-    } catch (error) {
-      console.error("Error unenrolling:", error);
-      alert("Failed to unenroll. Please try again.");
-    }
-  };
-
-  const handleEnroll = async (programId: string) => {
-    try {
-      const newEnrollment = await createEnrollment(siteId, {
-        device_ids: [deviceId],
-        program_id: programId,
-        enroll_method: "USER_ACTION",
-        has_agreed_to_terms_and_conditions: true, // You might want to add a checkbox for this
-      });
-      setLocalEnrollments([...localEnrollments, newEnrollment]);
-      alert("Successfully enrolled in the program.");
-    } catch (error) {
-      console.error("Error enrolling:", error);
-      alert("Failed to enroll. Please try again.");
-    }
-  };
-
   const getEnrollmentForProgram = (programId: string) => {
-    return localEnrollments.find(
+    return enrollments.find(
       (e) => e.program_id === programId && e.status !== "UNENROLLED"
     );
   };
@@ -69,12 +35,76 @@ export function ProgramEnrollmentList({
                   <p>Reason: {enrollment.status_reason}</p>
                 )}
                 <p>Enrolled: {enrollment.enrolled_at}</p>
-                <button onClick={() => handleUnenroll(enrollment.id)}>
-                  Unenroll
-                </button>
+                {program.enrollment_form && (
+                  <div>
+                    <h4>Program Specific Attributes:</h4>
+                    {program.enrollment_form.map((field) => {
+                      const attribute =
+                        enrollment.program_specific_attributes.find(
+                          (attr) => attr.name === field.name
+                        );
+                      let displayValue = "";
+                      if (attribute) {
+                        if (field.type === "boolean") {
+                          displayValue =
+                            attribute.value === "true" ? "Yes" : "No";
+                        } else {
+                          displayValue = attribute.value;
+                        }
+                      }
+                      return (
+                        <p key={field.name}>
+                          {field.label}: {displayValue}
+                        </p>
+                      );
+                    })}
+                  </div>
+                )}
+                <form
+                  action={deleteEnrollment.bind(null, siteId, enrollment.id)}
+                >
+                  <button type="submit">Unenroll</button>
+                </form>
               </>
             ) : (
-              <button onClick={() => handleEnroll(program.id)}>Enroll</button>
+              <form action={createEnrollment.bind(null, siteId)}>
+                <input type="hidden" name="programId" value={program.id} />
+                <input type="hidden" name="deviceId" value={deviceId} />
+                {program.enrollment_form && (
+                  <div>
+                    <h4>Enrollment Form:</h4>
+                    {program.enrollment_form.map((field) => (
+                      <div key={field.name}>
+                        <label htmlFor={`${program.id}-${field.name}`}>
+                          {field.label}:
+                        </label>
+                        {field.type === "boolean" ? (
+                          <input
+                            type="checkbox"
+                            id={`${program.id}-${field.name}`}
+                            name={field.name}
+                          />
+                        ) : field.type === "number" ? (
+                          <input
+                            type="number"
+                            id={`${program.id}-${field.name}`}
+                            name={field.name}
+                            required={true}
+                          />
+                        ) : (
+                          <input
+                            type="text"
+                            id={`${program.id}-${field.name}`}
+                            name={field.name}
+                            required={true}
+                          />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <button type="submit">Enroll</button>
+              </form>
             )}
           </li>
         );

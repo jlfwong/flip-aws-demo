@@ -3,6 +3,12 @@ import { flipAdminApiClient, FlipSiteApiClient } from "../../../lib/flip-api";
 import { SupabaseDevices } from "../../../lib/supabase-devices";
 import { createSupabaseServerClient } from "../../../lib/supabase-server-client";
 import { registerDevice } from "./actions";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Typography } from "@/components/ui/typography";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Metadata } from "next";
 
 interface PayloadData {
   thingName: string;
@@ -10,6 +16,10 @@ interface PayloadData {
   timestamp: number;
   version: number;
 }
+
+export const metadata: Metadata = {
+  title: "Register Device | Device Management",
+};
 
 export default async function RegisterPage({
   searchParams,
@@ -28,10 +38,14 @@ export default async function RegisterPage({
 
   if (!payload || !signature) {
     return (
-      <div className="p-4">
-        <h1 className="text-2xl font-bold mb-4">Error</h1>
-        <p>Missing payload or signature</p>
-      </div>
+      <Card className="p-4">
+        <CardHeader>
+          <CardTitle>Error</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Typography>Missing payload or signature</Typography>
+        </CardContent>
+      </Card>
     );
   }
 
@@ -40,10 +54,14 @@ export default async function RegisterPage({
     payloadData = JSON.parse(decodeURIComponent(payload));
   } catch (error) {
     return (
-      <div className="p-4">
-        <h1 className="text-2xl font-bold mb-4">Error</h1>
-        <p>Invalid payload format</p>
-      </div>
+      <Card className="p-4">
+        <CardHeader>
+          <CardTitle>Error</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Typography>Invalid payload format</Typography>
+        </CardContent>
+      </Card>
     );
   }
 
@@ -70,62 +88,64 @@ export default async function RegisterPage({
   }
 
   return (
-    <div className="p-4">
-      <h1 className="text-2xl font-bold mb-4">
-        Device Registration Information
-      </h1>
-      <p className="mb-4">
-        <strong>Logged in as:</strong> {user!.email}
-      </p>
-      {awsThing && (
-        <div className="space-y-2">
-          <p>
-            <strong>AWS IoT Thing:</strong> {JSON.stringify(awsThing)}
-          </p>
-        </div>
-      )}
-      {supabaseDevice && (
-        <div className="space-y-2">
-          <p>
-            <strong>Supabase DB Record:</strong>{" "}
-            {JSON.stringify(supabaseDevice)}
-          </p>
-        </div>
-      )}
-      {flipDevice && (
-        <div className="space-y-2">
-          <p>
-            <strong>Flip API Record:</strong> {JSON.stringify(flipDevice)}
-          </p>
-        </div>
-      )}
-      <div className="space-y-2">
-        <p>
-          <strong>Thing Name:</strong> {thingName}
-        </p>
-        <p>
-          <strong>Timestamp:</strong> {decodedTimestamp.toLocaleString()}
-        </p>
-        <p>
-          <strong>Nonce:</strong> {nonce}
-        </p>
-        <p>
-          <strong>Version:</strong> {version}
-        </p>
-        <p>
-          <strong>Signature:</strong> {signature}
-        </p>
-        <p>
-          <strong>Verification Status:</strong> {verificationStatus}
-        </p>
-      </div>
-      <div className="mt-4">
-        <h2 className="text-xl font-bold mb-2">Raw Payload:</h2>
-        <pre className="bg-gray-100 p-2 rounded">
-          {JSON.stringify(payloadData, null, 2)}
-        </pre>
-      </div>
+    <div className="space-y-6 p-6">
       <DeviceRegistrationForm payload={payload} signature={signature} />
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Device Registration Information</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Typography>
+            <strong>Logged in as:</strong> {user!.email}
+          </Typography>
+          {awsThing && (
+            <Typography>
+              <strong>AWS IoT Thing:</strong> {JSON.stringify(awsThing)}
+            </Typography>
+          )}
+          {supabaseDevice && (
+            <Typography>
+              <strong>Supabase DB Record:</strong>{" "}
+              {JSON.stringify(supabaseDevice)}
+            </Typography>
+          )}
+          {flipDevice && (
+            <Typography>
+              <strong>Flip API Record:</strong> {JSON.stringify(flipDevice)}
+            </Typography>
+          )}
+          <Typography>
+            <strong>Thing Name:</strong> {thingName}
+          </Typography>
+          <Typography>
+            <strong>Timestamp:</strong> {decodedTimestamp.toLocaleString()}
+          </Typography>
+          <Typography>
+            <strong>Nonce:</strong> {nonce}
+          </Typography>
+          <Typography>
+            <strong>Version:</strong> {version}
+          </Typography>
+          <Typography>
+            <strong>Signature:</strong> {signature}
+          </Typography>
+          <Typography>
+            <strong>Verification Status:</strong> {verificationStatus}
+          </Typography>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Raw Payload</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <pre className="bg-gray-100 p-2 rounded">
+            {JSON.stringify(payloadData, null, 2)}
+          </pre>
+        </CardContent>
+      </Card>
     </div>
   );
 }
@@ -138,223 +158,181 @@ export function DeviceRegistrationForm({
   signature: string;
 }) {
   return (
-    <form action={registerDevice} className="space-y-4 mt-8">
-      <h2 className="text-xl font-bold">Register Device</h2>
+    <Card>
+      <CardHeader>
+        <CardTitle>Register Device</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form action={registerDevice} className="space-y-4">
+          <input type="hidden" name="payload" value={payload} />
+          <input type="hidden" name="signature" value={signature} />
 
-      <input type="hidden" name="payload" value={payload} />
-      <input type="hidden" name="signature" value={signature} />
+          <div className="grid grid-cols-[150px_1fr] items-center gap-4">
+            <Label htmlFor="firstName">First Name</Label>
+            <Input
+              type="text"
+              id="firstName"
+              name="firstName"
+              required
+              defaultValue="John"
+            />
+          </div>
 
-      <div>
-        <label htmlFor="firstName" className="block">
-          First Name
-        </label>
-        <input
-          type="text"
-          id="firstName"
-          name="firstName"
-          required
-          className="w-full p-2 border rounded"
-          defaultValue="John"
-        />
-      </div>
+          <div className="grid grid-cols-[150px_1fr] items-center gap-4">
+            <Label htmlFor="lastName">Last Name</Label>
+            <Input
+              type="text"
+              id="lastName"
+              name="lastName"
+              required
+              defaultValue="Doe"
+            />
+          </div>
 
-      <div>
-        <label htmlFor="lastName" className="block">
-          Last Name
-        </label>
-        <input
-          type="text"
-          id="lastName"
-          name="lastName"
-          required
-          className="w-full p-2 border rounded"
-          defaultValue="Doe"
-        />
-      </div>
+          <div className="grid grid-cols-[150px_1fr] items-center gap-4">
+            <Label htmlFor="stateCode">State Code</Label>
+            <Input
+              type="text"
+              id="stateCode"
+              name="stateCode"
+              required
+              defaultValue="CA"
+            />
+          </div>
 
-      <div>
-        <label htmlFor="stateCode" className="block">
-          State Code
-        </label>
-        <input
-          type="text"
-          id="stateCode"
-          name="stateCode"
-          required
-          className="w-full p-2 border rounded"
-          defaultValue="CA"
-        />
-      </div>
+          <div className="grid grid-cols-[150px_1fr] items-center gap-4">
+            <Label htmlFor="city">City</Label>
+            <Input
+              type="text"
+              id="city"
+              name="city"
+              required
+              defaultValue="San Francisco"
+            />
+          </div>
 
-      <div>
-        <label htmlFor="city" className="block">
-          City
-        </label>
-        <input
-          type="text"
-          id="city"
-          name="city"
-          required
-          className="w-full p-2 border rounded"
-          defaultValue="San Francisco"
-        />
-      </div>
+          <div className="grid grid-cols-[150px_1fr] items-center gap-4">
+            <Label htmlFor="zipCode">Zip Code</Label>
+            <Input
+              type="text"
+              id="zipCode"
+              name="zipCode"
+              required
+              defaultValue="88801"
+            />
+          </div>
 
-      <div>
-        <label htmlFor="zipCode" className="block">
-          Zip Code
-        </label>
-        <input
-          type="text"
-          id="zipCode"
-          name="zipCode"
-          required
-          className="w-full p-2 border rounded"
-          defaultValue="88801"
-        />
-      </div>
+          <div className="grid grid-cols-[150px_1fr] items-center gap-4">
+            <Label htmlFor="streetAddress">Street Address</Label>
+            <Input
+              type="text"
+              id="streetAddress"
+              name="streetAddress"
+              required
+              defaultValue="123 Market St"
+            />
+          </div>
 
-      <div>
-        <label htmlFor="streetAddress" className="block">
-          Street Address
-        </label>
-        <input
-          type="text"
-          id="streetAddress"
-          name="streetAddress"
-          required
-          className="w-full p-2 border rounded"
-          defaultValue="123 Market St"
-        />
-      </div>
+          <div className="grid grid-cols-[150px_1fr] items-center gap-4">
+            <Label htmlFor="streetAddress2">Street Address 2</Label>
+            <Input
+              type="text"
+              id="streetAddress2"
+              name="streetAddress2"
+              defaultValue="Apt 4B"
+            />
+          </div>
 
-      <div>
-        <label htmlFor="streetAddress2" className="block">
-          Street Address 2
-        </label>
-        <input
-          type="text"
-          id="streetAddress2"
-          name="streetAddress2"
-          className="w-full p-2 border rounded"
-          defaultValue="Apt 4B"
-        />
-      </div>
+          <div className="grid grid-cols-[150px_1fr] items-center gap-4">
+            <Label htmlFor="manufacturerName">Manufacturer Name</Label>
+            <Input
+              type="text"
+              id="manufacturerName"
+              name="manufacturerName"
+              required
+              defaultValue="Tesla"
+            />
+          </div>
 
-      <div>
-        <label htmlFor="manufacturerName" className="block">
-          Manufacturer Name
-        </label>
-        <input
-          type="text"
-          id="manufacturerName"
-          name="manufacturerName"
-          required
-          className="w-full p-2 border rounded"
-          defaultValue="Tesla"
-        />
-      </div>
+          <div className="grid grid-cols-[150px_1fr] items-center gap-4">
+            <Label htmlFor="productName">Product Name</Label>
+            <Input
+              type="text"
+              id="productName"
+              name="productName"
+              required
+              defaultValue="Powerwall"
+            />
+          </div>
 
-      <div>
-        <label htmlFor="productName" className="block">
-          Product Name
-        </label>
-        <input
-          type="text"
-          id="productName"
-          name="productName"
-          required
-          className="w-full p-2 border rounded"
-          defaultValue="Powerwall"
-        />
-      </div>
+          <div className="grid grid-cols-[150px_1fr] items-center gap-4">
+            <Label htmlFor="serialNumber">Serial Number</Label>
+            <Input
+              type="text"
+              id="serialNumber"
+              name="serialNumber"
+              required
+              defaultValue="PW123456789"
+            />
+          </div>
 
-      <div>
-        <label htmlFor="serialNumber" className="block">
-          Serial Number
-        </label>
-        <input
-          type="text"
-          id="serialNumber"
-          name="serialNumber"
-          required
-          className="w-full p-2 border rounded"
-          defaultValue="PW123456789"
-        />
-      </div>
+          <div className="grid grid-cols-[150px_1fr] items-center gap-4">
+            <Label htmlFor="batteryCapacity">Battery Capacity (Wh)</Label>
+            <Input
+              type="number"
+              id="batteryCapacity"
+              name="batteryCapacity"
+              required
+              defaultValue="13500"
+            />
+          </div>
 
-      <div>
-        <label htmlFor="batteryCapacity" className="block">
-          Battery Capacity (Wh)
-        </label>
-        <input
-          type="number"
-          id="batteryCapacity"
-          name="batteryCapacity"
-          required
-          className="w-full p-2 border rounded"
-          defaultValue="13500"
-        />
-      </div>
+          <div className="grid grid-cols-[150px_1fr] items-center gap-4">
+            <Label htmlFor="batteryPowerInput">Battery Power Input (W)</Label>
+            <Input
+              type="number"
+              id="batteryPowerInput"
+              name="batteryPowerInput"
+              required
+              defaultValue="5000"
+            />
+          </div>
 
-      <div>
-        <label htmlFor="batteryPowerInput" className="block">
-          Battery Power Input (W)
-        </label>
-        <input
-          type="number"
-          id="batteryPowerInput"
-          name="batteryPowerInput"
-          required
-          className="w-full p-2 border rounded"
-          defaultValue="5000"
-        />
-      </div>
+          <div className="grid grid-cols-[150px_1fr] items-center gap-4">
+            <Label htmlFor="batteryPowerOutput">Battery Power Output (W)</Label>
+            <Input
+              type="number"
+              id="batteryPowerOutput"
+              name="batteryPowerOutput"
+              required
+              defaultValue="5000"
+            />
+          </div>
 
-      <div>
-        <label htmlFor="batteryPowerOutput" className="block">
-          Battery Power Output (W)
-        </label>
-        <input
-          type="number"
-          id="batteryPowerOutput"
-          name="batteryPowerOutput"
-          required
-          className="w-full p-2 border rounded"
-          defaultValue="5000"
-        />
-      </div>
+          <div className="grid grid-cols-[150px_1fr] items-center gap-4">
+            <Label htmlFor="reservePercentage">Reserve Percentage</Label>
+            <Input
+              type="number"
+              id="reservePercentage"
+              name="reservePercentage"
+              required
+              defaultValue="20"
+            />
+          </div>
 
-      <div>
-        <label htmlFor="reservePercentage" className="block">
-          Reserve Percentage
-        </label>
-        <input
-          type="number"
-          id="reservePercentage"
-          name="reservePercentage"
-          required
-          className="w-full p-2 border rounded"
-          defaultValue="20"
-        />
-      </div>
+          <div className="grid grid-cols-[150px_1fr] items-center gap-4">
+            <Label htmlFor="serviceAccountId">Service Account ID</Label>
+            <Input
+              type="text"
+              id="serviceAccountId"
+              name="serviceAccountId"
+              required
+            />
+          </div>
 
-      <div>
-        <label htmlFor="serviceAccountId">Service Account ID:</label>
-        <input
-          type="text"
-          id="serviceAccountId"
-          name="serviceAccountId"
-          required
-        />
-      </div>
-
-      <button
-        type="submit"
-        className="bg-blue-500 text-white p-2 rounded hover:bg-blue-600"
-      >
-        Register Device
-      </button>
-    </form>
+          <Button type="submit">Register Device</Button>
+        </form>
+      </CardContent>
+    </Card>
   );
 }

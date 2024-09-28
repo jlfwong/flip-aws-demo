@@ -1,5 +1,17 @@
 import { FlipEnrollment, FlipProgram } from "../../../lib/flip-api";
 import { deleteEnrollment, createEnrollment } from "./actions";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Typography } from "@/components/ui/typography";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
 
 interface ProgramEnrollmentListProps {
   programs: FlipProgram[];
@@ -21,94 +33,110 @@ export function ProgramEnrollmentList({
   };
 
   return (
-    <ul>
+    <div className="space-y-6">
       {programs.map((program) => {
         const enrollment = getEnrollmentForProgram(program.id);
         return (
-          <li key={program.id}>
-            <h3>{program.name}</h3>
-            <p>{program.description}</p>
-            {enrollment ? (
-              <>
-                <p>Status: {enrollment.status}</p>
-                {enrollment.status_reason && (
-                  <p>Reason: {enrollment.status_reason}</p>
-                )}
-                <p>Enrolled: {enrollment.enrolled_at}</p>
-                {program.enrollment_form && (
-                  <div>
-                    <h4>Program Specific Attributes:</h4>
-                    {program.enrollment_form.map((field) => {
-                      const attribute =
-                        enrollment.program_specific_attributes.find(
-                          (attr) => attr.name === field.name
-                        );
-                      let displayValue = "";
-                      if (attribute) {
-                        if (field.type === "boolean") {
-                          displayValue =
-                            attribute.value === "true" ? "Yes" : "No";
-                        } else {
-                          displayValue = attribute.value;
+          <Card key={program.id}>
+            <CardHeader>
+              <CardTitle>{program.name}</CardTitle>
+              <Typography variant="muted">{program.description}</Typography>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {enrollment ? (
+                <>
+                  <Typography>Status: {enrollment.status}</Typography>
+                  {enrollment.status_reason && (
+                    <Typography>Reason: {enrollment.status_reason}</Typography>
+                  )}
+                  <Typography>Enrolled: {enrollment.enrolled_at}</Typography>
+                  {program.enrollment_form && (
+                    <div>
+                      <Typography variant="h4">
+                        Program Specific Attributes:
+                      </Typography>
+                      {program.enrollment_form.map((field) => {
+                        const attribute =
+                          enrollment.program_specific_attributes.find(
+                            (attr) => attr.name === field.name
+                          );
+                        let displayValue = "";
+                        if (attribute) {
+                          if (field.type === "boolean") {
+                            displayValue =
+                              attribute.value === "true" ? "Yes" : "No";
+                          } else {
+                            displayValue = attribute.value;
+                          }
                         }
-                      }
-                      return (
-                        <p key={field.name}>
-                          {field.label}: {displayValue}
-                        </p>
-                      );
-                    })}
-                  </div>
-                )}
+                        return (
+                          <Typography key={field.name}>
+                            {field.label}: {displayValue}
+                          </Typography>
+                        );
+                      })}
+                    </div>
+                  )}
+                </>
+              ) : (
+                <form
+                  action={createEnrollment.bind(null, siteId)}
+                  className="space-y-4"
+                >
+                  <Input type="hidden" name="programId" value={program.id} />
+                  <Input type="hidden" name="deviceId" value={deviceId} />
+                  {program.enrollment_form && (
+                    <div className="space-y-4">
+                      {program.enrollment_form.map((field) => (
+                        <div
+                          key={field.name}
+                          className="grid grid-cols-[150px_1fr] items-center gap-4"
+                        >
+                          <Label htmlFor={`${program.id}-${field.name}`}>
+                            {field.label}:
+                          </Label>
+                          {field.type === "boolean" ? (
+                            <Checkbox
+                              id={`${program.id}-${field.name}`}
+                              name={field.name}
+                            />
+                          ) : field.type === "number" ? (
+                            <Input
+                              type="number"
+                              id={`${program.id}-${field.name}`}
+                              name={field.name}
+                              required={true}
+                            />
+                          ) : (
+                            <Input
+                              type="text"
+                              id={`${program.id}-${field.name}`}
+                              name={field.name}
+                              required={true}
+                            />
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  <Button type="submit">Enroll</Button>
+                </form>
+              )}
+            </CardContent>
+            {enrollment && (
+              <CardFooter>
                 <form
                   action={deleteEnrollment.bind(null, siteId, enrollment.id)}
                 >
-                  <button type="submit">Unenroll</button>
+                  <Button type="submit" variant="destructive">
+                    Unenroll
+                  </Button>
                 </form>
-              </>
-            ) : (
-              <form action={createEnrollment.bind(null, siteId)}>
-                <input type="hidden" name="programId" value={program.id} />
-                <input type="hidden" name="deviceId" value={deviceId} />
-                {program.enrollment_form && (
-                  <div>
-                    <h4>Enrollment Form:</h4>
-                    {program.enrollment_form.map((field) => (
-                      <div key={field.name}>
-                        <label htmlFor={`${program.id}-${field.name}`}>
-                          {field.label}:
-                        </label>
-                        {field.type === "boolean" ? (
-                          <input
-                            type="checkbox"
-                            id={`${program.id}-${field.name}`}
-                            name={field.name}
-                          />
-                        ) : field.type === "number" ? (
-                          <input
-                            type="number"
-                            id={`${program.id}-${field.name}`}
-                            name={field.name}
-                            required={true}
-                          />
-                        ) : (
-                          <input
-                            type="text"
-                            id={`${program.id}-${field.name}`}
-                            name={field.name}
-                            required={true}
-                          />
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
-                <button type="submit">Enroll</button>
-              </form>
+              </CardFooter>
             )}
-          </li>
+          </Card>
         );
       })}
-    </ul>
+    </div>
   );
 }

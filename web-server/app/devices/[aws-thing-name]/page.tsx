@@ -1,7 +1,21 @@
+import { Metadata } from "next";
 import { createSupabaseServerClient } from "../../../lib/supabase-server-client";
 import { flipAdminApiClient } from "../../../lib/flip-api";
 import { UpdateSiteForm } from "./UpdateSiteForm";
 import { ProgramEnrollmentList } from "./ProgramEnrollmentList";
+import { Typography } from "@/components/ui/typography";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: { "aws-thing-name": string };
+}): Promise<Metadata> {
+  return {
+    title: `Device: ${params["aws-thing-name"]} | Device Management`,
+  };
+}
 
 export default async function DevicePage({
   params,
@@ -33,21 +47,33 @@ export default async function DevicePage({
   ]);
 
   return (
-    <main>
-      <h1>Device: {params["aws-thing-name"]}</h1>
-      <p>Flip Device ID: {device.flip_device_id}</p>
-      <p>Flip Site ID: {device.flip_site_id}</p>
+    <main className="p-6 space-y-8">
+      <div className="space-y-2">
+        <Typography variant="h1">Device: {params["aws-thing-name"]}</Typography>
+        <Typography>Flip Device ID: {device.flip_device_id}</Typography>
+        <Typography>Flip Site ID: {device.flip_site_id}</Typography>
+      </div>
 
-      <h2>Site Information</h2>
-      <UpdateSiteForm initialSite={site} siteId={device.flip_site_id} />
+      <section className="space-y-4">
+        <Typography variant="h2">Site Information</Typography>
+        <UpdateSiteForm initialSite={site} siteId={device.flip_site_id} />
+      </section>
 
-      <h2>Programs</h2>
-      <ProgramEnrollmentList
-        programs={programs}
-        enrollments={enrollments}
-        siteId={device.flip_site_id}
-        deviceId={device.flip_device_id}
-      />
+      <section className="space-y-4">
+        <Typography variant="h2">Programs</Typography>
+        <ProgramEnrollmentList
+          programs={programs}
+          enrollments={enrollments}
+          siteId={device.flip_site_id}
+          deviceId={device.flip_device_id}
+        />
+      </section>
+
+      <div className="mt-8">
+        <Link href="/">
+          <Button variant="outline">Back Home</Button>
+        </Link>
+      </div>
     </main>
   );
 }

@@ -1,3 +1,4 @@
+import { Metadata } from "next";
 import { createSupabaseServerClient } from "../../../lib/supabase-server-client";
 import { flipAdminApiClient } from "../../../lib/flip-api";
 import { UpdateSiteForm } from "./UpdateSiteForm";
@@ -5,6 +6,16 @@ import { ProgramEnrollmentList } from "./ProgramEnrollmentList";
 import { Typography } from "@/components/ui/typography";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: { "aws-thing-name": string };
+}): Promise<Metadata> {
+  return {
+    title: `Device: ${params["aws-thing-name"]} | Device Management`,
+  };
+}
 
 export default async function DevicePage({
   params,

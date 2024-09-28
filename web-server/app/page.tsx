@@ -1,3 +1,4 @@
+import { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { logout } from "./auth/actions";
 import Link from "next/link";
@@ -12,6 +13,10 @@ import {
 } from "@/components/ui/card";
 import { Typography } from "@/components/ui/typography";
 import { List, ListItem } from "@/components/ui/list";
+
+export const metadata: Metadata = {
+  title: "Home | Device Management",
+};
 
 export default async function HomePage() {
   const supabase = createSupabaseServerClient();
